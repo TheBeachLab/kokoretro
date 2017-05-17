@@ -1,0 +1,334 @@
+<html>\n<body>\n<pre>\ncommands:
+   bin/stl_info
+   bin/stl_png
+   bin/stl_path
+   bin/png_size
+   bin/png_scale
+   bin/png_distances
+   bin/png_offset
+   bin/png_path
+   bin/png_halftone
+   bin/svg_path
+   bin/path_join
+   bin/path_array
+   bin/path_ps
+   bin/path_dxf
+   bin/path_png
+   bin/path_rml
+   bin/path_sbp
+   bin/path_g
+   bin/path_camm
+   bin/path_epi
+   bin/path_uni
+   bin/path_oms
+   bin/path_ord
+   bin/png_grb
+   bin/png_drl
+   bin/math_png
+   bin/math_dot
+   bin/math_stl
+   bin/math_svg
+   bin/cad_png
+   bin/cad_view
+   bin/path_view
+   bin/rml_move
+   bin/fab_send
+   bin/fab_update
+   bin/cad_math
+   bin/math_png_py
+   bin/math_stl_py
+   bin/png_tile
+   bin/eagle_png
+   bin/asdf_png
+   bin/vol_asdf
+   bin/asdf_stl
+   bin/vol_stl
+   bin/asdf_histogram
+   bin/fab
+   bin/fab.html
+   bin/fabserver
+   bin/make_cad_png
+   bin/make_cad_ps
+   bin/make_cad_stl
+   bin/make_cad_camm
+   bin/make_cad_rml
+   bin/make_cad_epi
+   bin/make_cad_uni
+   bin/make_cad_sbp
+   bin/make_cad_g
+   bin/make_cad_ord
+   bin/make_cad_grb
+   bin/make_cad_drl
+   bin/make_math_camm
+   bin/make_math_epi
+   bin/make_math_g
+   bin/make_math_ord
+   bin/make_math_ps
+   bin/make_math_uni
+   bin/make_math_rml
+   bin/make_math_sbp
+   bin/make_math_grb
+   bin/make_math_drl
+   bin/make_png_png
+   bin/make_png_ps
+   bin/make_png_epi
+   bin/make_png_uni
+   bin/make_png_grb
+   bin/make_png_epi_halftone
+   bin/make_png_uni_halftone
+   bin/make_png_rml
+   bin/make_png_sbp
+   bin/make_png_ord
+   bin/make_png_camm
+   bin/make_png_plt
+   bin/make_png_g
+   bin/make_png_drl
+   bin/make_stl_png
+   bin/make_stl_rml
+   bin/make_stl_sbp
+   bin/make_stl_g
+   bin/make_svg_camm
+   bin/make_svg_epi
+   bin/make_svg_uni
+   bin/make_svg_g
+   bin/make_svg_rml
+   bin/make_svg_sbp
+   bin/make_svg_ord
+   bin/make_png_snap
+   bin/make_cad_snap
+   bin/make_stl_snap
+   bin/make_svg_snap
+   bin/make_png_ps_halftone
+   bin/make_cad_dxf
+   bin/make_math_dxf
+   bin/make_math_stl
+   bin/make_png_dxf
+   bin/cad_ui
+   bin/kokopelli
+   bin/asdf_view
+
+command line: stl_info in.stl
+   in.stl = input binary STL file
+
+command line: stl_png in.stl out.png [units [resolution [axis]]]
+   in.stl = input binary STL file
+   out.png = output PNG file
+   units = file units (optional, mm/unit, default 1)
+   resolution = image resolution (optional, pixels/mm, default 10)
+   axis = projection axis (optional, top or bottom, x|X|y|Y|z|Z, default z)
+
+command line: stl_path in.stl out.path [units [resolution [error [offset_diameter [offset_number [offset_overlap [z_thickness [z_top [z_bottom]]]]]]]]]
+   in.stl = input binary STL file
+   out.path = output path file
+   units = file units (optional, mm/unit, default 1)
+   resolution = image resolution (optional, pixels/mm, default 10)
+   error = allowable vector fit deviation (optional, pixels, default 1.1)
+   offset_diameter = diameter to offset (optional, mm, default 0)
+   offset_number = number of contours to offset (optional, -1 to fill all, default 1)
+   offset_overlap = tool offset overlap fraction (optional, 0 (no overlap) - 1 (complete overlap, default 0.5))
+   z_thickness = slice z thickness (optional, mm, default STL value)
+   z_top = top slice z value (optional, mm, default STL value)
+   z_bottom = bottom slice z value (optional, mm, default STL value)
+
+command line: png_size in.png [dx [dy]]
+   in.png = input PNG file
+   dx = set width (optional, mm)
+   dy = set height (optional, mm)
+
+command line: png_scale in.png out.png low high
+   in.png = input PNG file
+   out.png = output PNG file
+   low = rescaled intensity minimum (0-1)
+   high = rescaled intensity maximum (0-1)
+
+command line: png_distances in.png out.png [intensity [distances]]
+   in.png = input PNG file
+   out.png = input PNG file
+   intensity = intensity level to slice (optional, 0-1, default 0.5)
+   distances = show distances (optional, 0/1, default 1)
+
+command line: png_offset in.png out.png [intensity [distance]]
+   in.png = input PNG file
+   out.png = input PNG file
+   intensity = intensity level to slice (optional, 0-1, default 0.5)
+   distance = distance to offset (optional, mm, default 0)
+
+command line: png_path in.png out.path [error [offset_diameter [offset_number [offset_overlap [intensity_top [intensity_bottom [z_top [z_bottom [z_thickness [xz [yz [xy ]]]]]]]]]]]]
+   in.png = input PNG file
+   out.path = output path file
+   error = allowable vector fit deviation (optional, pixels, default 1.1)
+   offset_diameter = diameter to offset (optional, mm, default 0)
+   offset_number = number of contours to offset (optional, -1 to fill all, default 1)
+   offset_overlap = tool offset overlap fraction (optional, 0 (no overlap) - 1 (complete overlap, default 0.5))
+   intensity_top = top slice intensity (optional, 0-1, default 0.5)
+   intensity_bottom = bottom slice intensity (optional, 0-1, default intensity_top)
+   z_top = top slice z value (optional, mm, default 0)
+   z_bottom = bottom slice z value (optional, mm, default z_top)
+   z_thickness = slice z thickness (optional, mm, default z_top-z_bottom)
+   xz = xz finish (optional, 1=yes, default 0
+   yz = yz finish (optional, 1=yes, default 0
+   xy = xy path (optional, 1=yes, default 1
+
+command line: png_halftone in.png out.path [threshold [points [size [spacing [offset [invert]]]]]]
+   in.png = input PNG file
+   out.path = output path file
+   threshold = minimum spot radius (optional, pixels default 1)
+   points = points per spot (optional, default 8)
+   size = maximum spot size (optional, mm, default 1)
+   spacing = spot spacing (optional, 1 = size, default 1)
+   offset = row offset (optional, 1 = size, default 0.5)
+   offset = row offset (optional, 1 = size, default 0.5)
+   invert = invert image (0 = no (default), 1 = yes)
+
+command line: svg_path in.svg out.path [points [resolution [z]]]
+   in.svg = input binary SVG file
+   out.path = output path file
+   points = points per curve segment (optional, default 25)
+   resolution = path resolution (optional, default 1000)
+   z = path depth (optional, mm, default 0)
+
+command line: path_join in1.path in2.path out.path [dx [dy]]
+   in1.path = first input path file
+   in2.path = second input path file
+   out.path = joined output path file
+   dx = in1 horizontal offset (optional, mm, default 0)
+   dy = in1 vertical offset (optional, mm, default dx)
+
+command line: path_array in.path out.path nx ny [dx [dy]]
+   in.path = input path file
+   out.path = output path file
+   nx = number of horizonal array elements
+   ny = number of vertical array elements
+   dx = array element horizontal spacing (optional, mm, default 0)
+   dy = array element vertical spacing (optional, mm, default dx)
+
+command line: path_ps in.path out.ps [view]
+   in.path = input path file
+   out.ps= output PostScript file
+   view = view projection(s) (optional, z|3, default z)
+
+command line: path_dxf in.path out.dxf
+   in.path = input path file
+   out.dxf = output DXF file
+
+command line: path_png in.path out.png
+   in.path = input path file
+   out.png = output PNG file
+
+command line: path_rml in.path out.rml [speed [xmin ymin [zmin [z_up [direction]]]]]
+   in.path = input path file
+   out.rml = output Roland Modela file
+   speed = cutting speed (optional, mm/s, default 4)
+   xmin = left position (optional, mm, default path value)
+   ymin = front position (optional, mm, default path value)
+   zmin = bottom position (optional, -mm, default path value)
+   z_up = toop up position (optional, mm, default 1)
+   direction = machining direction (optional, 0 conventional/1 climb, default 1)
+
+command line: path_sbp in.path out.sbp [direction [spindle_speed [xy_speed z_speed [xy_jog_speed z_jog_speed z_jog [units]]]]]]
+   in.path = input path file
+   out.sbp = output ShopBot file
+   direction = machining direction (optional, 0 conventional/1 climb, default 0)
+   spindle_speed = spindle speed (optional, if control installed, RPM, default 12000)
+   xy_speed = xy cutting speed (optional, mm/s, default 30)
+   z_speed = z cutting speed (optional, mm/s, default 30)
+   xy_jog_speed = xy jog speed (optional, mm/s, default 150)
+   z_jog_speed = z jog speed (optional, mm/s, default 150)
+   z_jog = z jog height (optional, mm, default 25)
+   units = mm per file unit (optional, default 25.4)
+
+command line: path_g in.path out.g [direction [z_jog [feed [z_feed [spindle [tool [coolant]]]]]]
+   in.path = input path file
+   out.g = output G-code file
+   direction = machining direction (optional, 0 conventional/1 climb, default 0)
+   z_jog = z jog height (optional, mm, default 25)
+   feed = feed rate (optional, mm/s, default 100)
+   z_feed = z plunge rate (optional, mm/s, default xy feed rate)
+   spindle = spindle speed (optional, RPM, default 5000)
+   tool = tool number (optional, default 1)
+   coolant = coolant on/off (optional, 0=off/1=on, default 1)
+
+command line: path_camm in.path out.camm [force [velocity [xmin ymin]]]
+   in.path = input path file
+   out.camm = output Roland vinylcutter file
+   force = cutting force (optional, grams, default 45)
+   velocity = cutting speed (optional, cm/s, default 2)
+   xmin = left position (optional, mm, default path value)
+   ymin = bottom position (optional, mm, default path value)
+
+command line: path_epi in.path out.epi [power [speed [focus [xmin ymin [ [rate [max_power]]]]]
+   in.path = input path file
+   out.epi= output Epilog lasercutter file
+   power = percent power (optional, 0-100, default 100)
+   speed = percent speed (optional, 0-100, default 100)
+   focus = autofocus (optional, 0=off | 1=on, default on)
+   xmin = left position (optional, mm, default path, 0 = left side of bed)
+   ymin = front position (optional, mm, default path, 0 = back, front positive)
+   rate = pulse rate (optional, frequency, default 2500)
+   max_power = maximum power for maximum z value (optional, 0-100, default 100)
+
+command line: path_uni in.path out.uni [power [speed [xmin ymin [rate [max_power]]]]]
+   in.path = input path file
+   out.uni= output Universal lasercutter file
+   power = percent power (optional, 0-100, default 100)
+   speed = percent speed (optional, 0-100, default 100)
+   xmin = left position (optional, mm, default path, 0 = left side of bed)
+   ymin = front position (optional, mm, default path, 0 = back, front positive)
+   rate = pulse rate (optional, frequency, default 500)
+   max_power = maximum power for maximum z value (optional, 0-100, default 100)
+
+command line: path_oms in.path out.oms [velocity [acceleration [period]]]
+   in.path = input path file
+   out.oms = output Resonetics excimer micromachining center file
+   velocity (default 0.1)
+   acceleration (default 5.0)
+   period (usec, default 10000)
+
+command line: path_ord in.path out.ord [lead [quality [xstart ystart]]]
+   in.path = input path file
+   out.ord = output Omax waterjet file
+   lead = lead in/out (optional, mm, default 2)
+   quality = cut quality (optional, default -3)
+   xstart,ystart = start position (optional, mm, default path start)
+
+command line: png_grb in.png out.grb
+   in.png = input PNG file
+   out.grb = output Gerber (RS-274X) file
+
+command line: png_drl in.png out.drl
+   in.png = input PNG file
+   out.drl = output Excellon file
+
+
+
+
+
+command line: cad_png in.cad [args]
+   in.cad = input .cad file
+   args = math_png arguments (optional)
+
+command line: cad_view in.cad [args]
+   in.cad = input .cad file
+   args = math_png arguments (optional)
+   image viewer =  eog
+
+command line: path_view in.path [view [viewer]]
+   in.path = input path file
+   view = view projection(s) (optional, z|3, default z)
+   viewer = PostScript viewer [default evince]
+
+command line: rml_move x y
+   x,y, = position to move to (mm)
+
+
+
+
+
+
+
+
+
+
+
+
+

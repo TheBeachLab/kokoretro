@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+import  ctypes
+from    datetime import datetime
+import  sys
+import  os
+import  Queue
+import  wx
+import  threading
+
+from koko.glcanvas import GLCanvas
+from koko.c.asdf   import ASDF
+from koko.fab.path import Path
+from koko.c.mesh   import Mesh
+from koko.c.libtree  import libtree
+
+
+from OpenGL.GL      import *
+from OpenGL.arrays import vbo
+
+class GLCanvasFrame(wx.Frame):
+    def __init__(self):
+    
+        self.shader = 'Show shaded'
+        
+        wx.Frame.__init__(self, None, title = "asdf viewer")
+        sizer = wx.BoxSizer()
+        self.glc = GLCanvas(self, size=(800, 600))
+        
+        self.glc.Bind(wx.EVT_PAINT,     self.evt_paint)
+        self.glc.Bind(wx.EVT_KEY_DOWN, self.evt_key_down)
+        
+        sizer.Add(self.glc, proportion=1, flag=wx.EXPAND)
+        
+        self.mesh = None
+        self.draw_cubes = False
+        self.queue = Queue.Queue()
+        self.thread = None
+        
+        self.SetSizerAndFit(sizer)
+        self.Show()
+
+    def evt_paint(self, event):
+        self.glc.evt_paint(event, self.shader)
+
+    def evt_key_down(self, event):
+        code = event.GetKeyCode()
+        if code == wx.WXK_SPACE:
+            if self.shader == 'Show shaded':
+                self.shader = 'Show wireframe'
+            elif self.shader == 'Show wireframe':
+                self.shader = 'Show normals'
+            elif self.shader == 'Show normals':
+                self.shader = 'Show shaded'
+                    
+            self.Refresh()
+        elif code == ord('S'):
+            if isinstance(self.asdf, ASDF):
+                print 'Saving...'
+                img = self.asdf.render(alpha=self.glc.alpha, beta=self.glc.beta)
+                img.save("asdf.png")
+                print 'Done saving!'
+        elif code == ord('A'):
+            print 'alpha = %g\nbeta = %g' % (self.glc.alpha, self.glc.beta)
+        elif code == 27:
+            self.Destroy()
+    
+    def make_mesh_vbo(self, id):
+        mesh = self.mesh.get_lod_mesh(id)
+        vertex_vbo = vbo.VBO(mesh.vdata)
+        index_vbo  = vbo.VBO(mesh.idata, target=GL_ELEMENT_ARRAY_BUFFER)
+        self.queue.put((vertex_vbo, index_vbo, (mesh.X, mesh.Y, mesh.Z)))
+
+
+
+################################################################################
+# Error checking
+if len(sys.argv) < 2:
+    print '''command line: asdf_view filename.[asdf|mesh] [path.path]
+   filename      = input asdf file/folder or mesh folder
+   path.path     = input path file to superimpose
+'''
+    sys.exit(1)
+
+if not os.path.exists(sys.argv[1]):
+    sys.stderr.write(
+        "asdf_view error: Can't find input file %s\n." % sys.argv[1]) 
+    sys.exit(1)
+if len(sys.argv) > 2:
+    if not os.path.exists(sys.argv[2]):
+        sys.stderr.write(
+            "asdf_view error: Can't find input file %s\n." % sys.argv[2]) 
+        sys.exit(1)
+    path = Path.load(sys.argv[2])
+else:
+    path = None
+
+################################################################################
+# Loading files
+now = datetime.now()
+print "Loading ASDF file."
+asdf = ASDF.load(sys.argv[1])
+print "\t%s s" % (datetime.now() - now)
+
+################################################################################
+# Triangulating mesh
+if asdf is not None:
+    print "Triangulating"
+    now = datetime.now()
+    mesh = asdf.triangulate()
+    print "\t%s s" % (datetime.now() - now)
+
+print "\t{:,} vertices and {:,} triangles".format(mesh.vcount, mesh.tcount)
+################################################################################ 
+
+app = wx.App(0)
+frame = GLCanvasFrame()
+frame.glc.border = (128, 128, 128)
+frame.asdf = asdf
+frame.glc.load_mesh([mesh])
+frame.Refresh()
+
+
+if path is not None:
+    print "Loading path"
+    now = datetime.now()
+    frame.glc.load_path(path)
+    print "\t%s s" % (datetime.now() - now)
+app.MainLoop()
