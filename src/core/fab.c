@@ -2,12 +2,15 @@
 // fab.c
 //    fab modules routines
 //
-// Neil Gershenfeld
-// CBA MIT 2/22/13
-//
+// Neil Gershenfeld 9/8/13
 // (c) Massachusetts Institute of Technology 2013
-// Permission granted for experimental and personal use;
-// license for commercial sale available from MIT.
+//
+// This work may be reproduced, modified, distributed,
+// performed, and displayed for any purpose, but must
+// acknowledge the fab modules project. Copyright is
+// retained and must be preserved. The work is provided
+// as is; no warranty is provided, and users accept all 
+// liability.
 //
 
 #include "fab.h"
@@ -35,6 +38,10 @@ void init_vars(struct fab_vars *v) {
    v->h = 0;
    v->dx = 0;
    v->dy = 0;
+   v->dz = 0;
+   v->xmin = 0;
+   v->ymin = 0;
+   v->zmin = 0;
    v->distances = 0;
    v->starts= 0;
    v->minimums= 0;
@@ -64,7 +71,6 @@ void fab_read_stl(struct fab_vars *v, char *input_file_name) {
 	FILE *input_file;
    char buf[80],*ptr;
    uint32_t i,size,ret;
-
    //
    // read file
    //
@@ -103,7 +109,13 @@ void fab_read_stl(struct fab_vars *v, char *input_file_name) {
       ret = fread(&(v->mesh->triangle->attribute),2,1,input_file);
       }
    fclose(input_file);
-
+   //
+   // check read
+   //
+   if (ret == 0) {
+      printf("fab.c: oops -- file read failed\n");
+      exit(-1);
+      }
    v->mesh->min[0] = fab_big;
    v->mesh->min[1] = fab_big;
    v->mesh->min[2] = fab_big;
@@ -147,13 +159,17 @@ void fab_read_png(struct fab_vars *v, char *input_file_name) {
    v->png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
                                        NULL, NULL, NULL);
    v->info_ptr = png_create_info_struct(v->png_ptr);
-   
    png_init_io(v->png_ptr, input_file);
    png_read_info(v->png_ptr, v->info_ptr);
+   //
+   // get size
+   //
    v->nx = png_get_image_width(v->png_ptr, v->info_ptr);
    v->ny = png_get_image_height(v->png_ptr, v->info_ptr);
    v->bit_depth = png_get_bit_depth(v->png_ptr, v->info_ptr);
-   
+   //
+   // get units
+   //
    png_get_pHYs(v->png_ptr, v->info_ptr, &res_x, &res_y, &unit_type);
    if (unit_type == PNG_RESOLUTION_METER) {
       v->dx = 1000 * v->nx / ((float) res_x);
@@ -166,23 +182,27 @@ void fab_read_png(struct fab_vars *v, char *input_file_name) {
       v->dx = 1000 * v->nx / ((float) res_x);
       v->dy = 1000 * v->ny / ((float) res_y);
       }
-      
+   //
+   // get texts
+   //
    png_textp text_ptr;
    int num_text;
    png_get_text(v->png_ptr, v->info_ptr, &text_ptr, &num_text);
-   int t, z_found=0;
-   float zmin=0, zmax=0;
-   for (t=0; t < num_text; ++t) {
-      if (!strcmp(text_ptr[t].key, "zmax")) {
+   int t;
+   float xmin=0,ymin=0,zmin=0,zmax=0;
+   for (t = 0; t < num_text; ++t) {
+      if (0 == strcmp(text_ptr[t].key, "zmax"))
          sscanf(text_ptr[t].text, "%g", &zmax);
-         z_found |= 1;
-         } 
-      else if (!strcmp(text_ptr[t].key, "zmin")) {
+      else if (0 == strcmp(text_ptr[t].key, "zmin"))
          sscanf(text_ptr[t].text, "%g", &zmin);
-         z_found |= 2;
-         }
+      else if (0 == strcmp(text_ptr[t].key, "ymin"))
+         sscanf(text_ptr[t].text, "%g", &ymin);
+      else if (0 == strcmp(text_ptr[t].key, "xmin"))
+         sscanf(text_ptr[t].text, "%g", &xmin);
       }
-      
+   //
+   // set pixels
+   //
 	v->row_pointers = (png_bytep*) malloc(sizeof(png_bytep) * v->ny);
 	for (y = 0; y < v->ny; ++y)
 		v->row_pointers[y] = (png_byte*) malloc(png_get_rowbytes(v->png_ptr,
@@ -192,10 +212,13 @@ void fab_read_png(struct fab_vars *v, char *input_file_name) {
    // set variables
    //
    v->nz = 1;
-   v->dz = (z_found == 3) ? zmax-zmin : 0;
-   v->xmin = 0;
-   v->ymin = 0;
-   v->zmin = 0;
+   if (zmax != zmin)
+      v->dz = zmax - zmin;
+   else
+      v->dz = 0;
+   v->xmin = xmin;
+   v->ymin = ymin;
+   v->zmin = zmin;
    //
    // allocate array
    //
@@ -214,7 +237,7 @@ void fab_read_png(struct fab_vars *v, char *input_file_name) {
    printf("   bit depth: %d\n",v->bit_depth);
    printf("   x pixels: %d, y pixels: %d\n",v->nx,v->ny);
    printf("   x pixels/m: %d, y pixels/m: %d\n",(int) res_x,(int) res_y);
-   if (z_found == 3) {
+   if (v->dz != 0) {
       printf("   dx: %f mm, dy: %f mm, dz: %f mm\n",v->dx,v->dy,v->dz);
       }
    else {
@@ -254,6 +277,13 @@ void fab_read_array(struct fab_vars *v, char *input_file_name) {
       for (x = 0; x < v->nx; ++x)
          ret = fread(&v->array[y][x],1,1,input_file);
    //
+   // check read
+   //
+   if (ret == 0) {
+      printf("fab.c: oops -- file read failed\n");
+      exit(-1);
+      }
+   //
    // print, close, and return
    //
    printf("read %s\n",input_file_name);
@@ -268,8 +298,8 @@ void fab_read_path(struct fab_vars *v, char *input_file_name) {
    // read path from file
    //
 	FILE *input_file;
-   int x,y,z,i,ret,dof,nsegs=0,npts=0;
-   char c,units[255],line[255],*cret;
+   int x,y,z,dof,nsegs=0,npts=0;
+   char line[255];
    input_file = fopen(input_file_name,"r");
    if (input_file == 0) {
       printf("fab.c: oops -- can't open %s\n",input_file_name);
@@ -288,16 +318,28 @@ void fab_read_path(struct fab_vars *v, char *input_file_name) {
       else if (0 == strncmp(line,"units:",6)) {
          printf("   %s",line); // todo: parse and use units
          }
+      else if (0 == strncmp(line,"nx ny:",6)) {
+         sscanf(line,"nx ny: %d %d",&v->nx,&v->ny);
+         printf("   nx: %d, ny: %d\n",v->nx,v->ny);
+         }
       else if (0 == strncmp(line,"nx ny nz:",9)) {
-         sscanf(line,"nx ny nz: %d %d %d ",&v->nx,&v->ny,&v->nz);
+         sscanf(line,"nx ny nz: %d %d %d",&v->nx,&v->ny,&v->nz);
          printf("   nx: %d, ny: %d, nz: %d\n",v->nx,v->ny,v->nz);
          }
+      else if (0 == strncmp(line,"dx dy:",6)) {
+         sscanf(line,"dx dy: %lf %lf",&v->dx,&v->dy);
+         printf("   dx: %f, dy: %f\n",v->dx,v->dy);
+         }
       else if (0 == strncmp(line,"dx dy dz:",9)) {
-         sscanf(line,"dx dy dz: %lf %lf %lf ",&v->dx,&v->dy,&v->dz);
+         sscanf(line,"dx dy dz: %lf %lf %lf",&v->dx,&v->dy,&v->dz);
          printf("   dx: %f, dy: %f, dz: %f\n",v->dx,v->dy,v->dz);
          }
-      else if (0 == strncmp(line,"xmin ymin zmin:",9)) {
-         sscanf(line,"xmin ymin zmin: %lf %lf %lf ",&v->xmin,&v->ymin,&v->zmin);
+      else if (0 == strncmp(line,"xmin ymin:",10)) {
+         sscanf(line,"xmin ymin: %lf %lf",&v->xmin,&v->ymin);
+         printf("   xmin: %f, ymin: %f\n",v->xmin,v->ymin);
+         }
+      else if (0 == strncmp(line,"xmin ymin zmin:",15)) {
+         sscanf(line,"xmin ymin zmin: %lf %lf %lf",&v->xmin,&v->ymin,&v->zmin);
          printf("   xmin: %f, ymin: %f, zmin: %f\n",v->xmin,v->ymin,v->zmin);
          }
       else if (0 == strncmp(line,"path start:",11)) {
@@ -363,6 +405,9 @@ void fab_write_png_K(struct fab_vars *v, char *output_file_name) {
    //
 	FILE *output_file;
    int x,y;
+   int num_text=0;
+   char xmins[100],ymins[100],zmins[100],zmaxs[100];
+   png_text text_ptr[4];
    png_uint_32 res_x,res_y;
    png_byte color_type;
    png_byte bit_depth;
@@ -386,6 +431,29 @@ void fab_write_png_K(struct fab_vars *v, char *output_file_name) {
    res_x = 1000 * v->nx / v->dx;
    res_y = 1000 * v->ny / v->dy;
    png_set_pHYs(v->png_ptr, v->info_ptr, res_x, res_y, PNG_RESOLUTION_METER);
+   text_ptr[0].key = "xmin";
+   sprintf(xmins,"%f",v->xmin);
+   text_ptr[0].text = xmins;
+   text_ptr[0].compression = PNG_TEXT_COMPRESSION_NONE;
+   num_text += 1;
+   text_ptr[1].key = "ymin";
+   sprintf(ymins,"%f",v->ymin);
+   text_ptr[1].text = ymins;
+   text_ptr[1].compression = PNG_TEXT_COMPRESSION_NONE;
+   num_text += 1;
+   if (v->dz != 0) {
+      text_ptr[2].key = "zmin";
+      sprintf(zmins,"%f",v->zmin);
+      text_ptr[2].text = zmins;
+      text_ptr[2].compression = PNG_TEXT_COMPRESSION_NONE;
+      num_text += 1;
+      text_ptr[3].key = "zmax";
+      sprintf(zmaxs,"%f",(v->zmin + v->dz));
+      text_ptr[3].text = zmaxs;
+      text_ptr[3].compression = PNG_TEXT_COMPRESSION_NONE;
+      num_text += 1;
+      }
+   png_set_text(v->png_ptr, v->info_ptr, text_ptr, num_text);
    png_write_info(v->png_ptr, v->info_ptr);
    //
    // allocate pixels
@@ -425,7 +493,12 @@ void fab_write_png_K(struct fab_vars *v, char *output_file_name) {
    printf("write %s\n",output_file_name);
    printf("   x pixels: %d, y pixels: %d\n",v->nx,v->ny);
    printf("   x pixels/m: %d, y pixels/m: %d\n",(int) res_x,(int) res_y);
-   printf("   dx: %f mm, dy: %f mm\n",v->dx,v->dy);
+   if (v->dz != 0) {
+      printf("   dx: %f mm, dy: %f mm, dz: %f mm\n",v->dx,v->dy,v->dz);
+      }
+   else {
+      printf("   dx: %f mm, dy: %f mm\n",v->dx,v->dy);
+      }
    }
 
 void fab_write_array(struct fab_vars *v, char *output_file_name) {
@@ -467,9 +540,16 @@ void fab_write_path(struct fab_vars *v, char *output_file_name) {
    for (i = 0; i < v->path->dof; ++i)
       fprintf(output_file,"mm ");
    fprintf(output_file,"\n");
-   fprintf(output_file,"nx ny nz: %d %d %d\n",v->nx,v->ny,v->nz);
-   fprintf(output_file,"dx dy dz: %f %f %f\n",v->dx,v->dy,v->dz);
-   fprintf(output_file,"xmin ymin zmin: %f %f %f\n",v->xmin,v->ymin,v->zmin);
+   if (v->path->dof == 2) {
+      fprintf(output_file,"nx ny: %d %d\n",v->nx,v->ny);
+      fprintf(output_file,"dx dy: %f %f\n",v->dx,v->dy);
+      fprintf(output_file,"xmin ymin: %f %f\n",v->xmin,v->ymin);
+      }
+   else if (v->path->dof > 2) {
+      fprintf(output_file,"nx ny nz: %d %d %d\n",v->nx,v->ny,v->nz);
+      fprintf(output_file,"dx dy dz: %f %f %f\n",v->dx,v->dy,v->dz);
+      fprintf(output_file,"xmin ymin zmin: %f %f %f\n",v->xmin,v->ymin,v->zmin);
+      }
    fprintf(output_file,"path start:\n");
    while (1) {
       //
@@ -513,9 +593,16 @@ void fab_write_path(struct fab_vars *v, char *output_file_name) {
       }
    printf("\n");
    printf("   segments: %d, points: %d\n",nsegs,npts);
-   printf("   nx: %d, ny: %d, nz: %d\n",v->nx,v->ny,v->nz);
-   printf("   dx: %f, dy: %f, dz: %f\n",v->dx,v->dy,v->dz);
-   printf("   xmin: %f, ymin: %f, zmin: %f\n",v->xmin,v->ymin,v->zmin);
+   if (v->path->dof == 2) {
+      printf("   nx: %d, ny: %d\n",v->nx,v->ny);
+      printf("   dx: %f, dy: %f\n",v->dx,v->dy);
+      printf("   xmin: %f, ymin: %f\n",v->xmin,v->ymin);
+      }
+   else if (v->path->dof > 2) {
+      printf("   nx: %d, ny: %d, nz: %d\n",v->nx,v->ny,v->nz);
+      printf("   dx: %f, dy: %f, dz: %f\n",v->dx,v->dy,v->dz);
+      printf("   xmin: %f, ymin: %f, zmin: %f\n",v->xmin,v->ymin,v->zmin);
+      }
    }
 
 //
@@ -554,27 +641,39 @@ void fab_shade_line(struct fab_vars *v, int x0, int y0, int x1, int y1, int inte
    //
    int x,y,dx,dy,step;
    float slope;
-   if ((x0 == x1) && (y0 == y1)) {
-      v->array[y0][x0] = intensity;
-      return;
-      }
    dx = x1 - x0;
    dy = y1 - y0;
    x = x0;
    y = y0;
-   if (abs(dy) > abs(dx)) {
-      slope = ((float) dx)/((float) dy);
+   if ((dx == 0) && (dy == 0)) {
+      if ((x0 > 0) && (x0 < v->nx) && (y0 > 0) && (y0 < v->ny))
+         v->array[y0][x0] = intensity;
+      }
+   else if (abs(dx) == 0) {
       if (dy > 0)
          step = 1;
       else
          step = -1;
       do {
-         x = x0 + slope*(y-y0);
-         v->array[y][x] = intensity;
+         if ((x > 0) && (x < v->nx) && (y > 0) && (y < v->ny))
+            v->array[y][x] = intensity;
          y += step;
          } while (y != y1);
-      x = x0 + slope*(y-y0);
-      v->array[y][x] = intensity;
+      if ((x > 0) && (x < v->nx) && (y > 0) && (y < v->ny))
+         v->array[y][x] = intensity;
+      }
+   else if (abs(dy) == 0) {
+      if (dx > 0)
+         step = 1;
+      else
+         step = -1;
+      do {
+         if ((x > 0) && (x < v->nx) && (y > 0) && (y < v->ny))
+            v->array[y][x] = intensity;
+         x += step;
+         } while (x != x1);
+      if ((x > 0) && (x < v->nx) && (y > 0) && (y < v->ny))
+         v->array[y][x] = intensity;
       }
    else {
       slope = ((float) dy)/((float) dx);
@@ -582,14 +681,15 @@ void fab_shade_line(struct fab_vars *v, int x0, int y0, int x1, int y1, int inte
          step = 1;
       else
          step = -1;
-      x = x0;
       do {
          y = y0 + slope*(x-x0);
-         v->array[y][x] = intensity;
+         if ((x > 0) && (x < v->nx) && (y > 0) && (y < v->ny))
+            v->array[y][x] = intensity;
          x += step;
          } while (x != x1);
       y = y0 + slope*(x-x0);
-      v->array[y][x] = intensity;
+      if ((x > 0) && (x < v->nx) && (y > 0) && (y < v->ny))
+         v->array[y][x] = intensity;
       }
    }
 
@@ -637,7 +737,7 @@ void fab_shade_path_displace(struct fab_vars *v) {
    //
    // shade path into array with z displacement
    //
-   int x,y,z,x0,y0,z0,x1,y1,z1,nz,intensity;
+   int x,y,x0,y0,z0,x1,y1,z1,nz,intensity;
    float scale;
    //
    // check for thickness
@@ -699,14 +799,14 @@ void fab_shade_path_displace(struct fab_vars *v) {
       }
    }
 
-int row(struct fab_vars *v, float units, int Y, float value) {
+int fab_row(struct fab_vars *v, float units, int Y, float value) {
     //
     // return array row
     //
     value = 0.5f + (v->ny - 1) * units * (value - v->mesh->min[Y]) / v->dy;
     return (value);
 }
-int col(struct fab_vars *v, float units, int X, float value) {
+int fab_col(struct fab_vars *v, float units, int X, float value) {
     //
     // return array col
     //
@@ -736,14 +836,14 @@ void fab_shade_triangle(struct fab_vars *v, float units, int S, int X, int Y, in
     //
     // find coords
     //
-    xmin = col(v, units, X, v->mesh->triangle->v0[X]);
-    ymin = row(v, units, Y, v->mesh->triangle->v0[Y]);
+    xmin = fab_col(v, units, X, v->mesh->triangle->v0[X]);
+    ymin = fab_row(v, units, Y, v->mesh->triangle->v0[Y]);
     zmin = fab_height(v, S, Z, v->mesh->triangle->v0[Z]);
-    x1 = col(v, units, X, v->mesh->triangle->v1[X]);
-    y1 = row(v, units, Y, v->mesh->triangle->v1[Y]);
+    x1 = fab_col(v, units, X, v->mesh->triangle->v1[X]);
+    y1 = fab_row(v, units, Y, v->mesh->triangle->v1[Y]);
     z1 = fab_height(v, S, Z, v->mesh->triangle->v1[Z]);
-    x2 = col(v, units, X, v->mesh->triangle->v2[X]);
-    y2 = row(v, units, Y, v->mesh->triangle->v2[Y]);
+    x2 = fab_col(v, units, X, v->mesh->triangle->v2[X]);
+    y2 = fab_row(v, units, Y, v->mesh->triangle->v2[Y]);
     z2 = fab_height(v, S, Z, v->mesh->triangle->v2[Z]);
     //
     // check normal if needs to be drawn
@@ -828,26 +928,26 @@ void fab_shade_mesh(struct fab_vars *v, float units, float resolution, char axis
     // allocate array
     //
     if (axis == 'x') {
-        X = 1; Y = 2; Z = 0; S = 1;
-    }
+      X = 1; Y = 2; Z = 0; S = 1;
+      }
     else if (axis == 'X') {
-        X = 1; Y = 2; Z = 0; S = -1;
-    }
+      X = 1; Y = 2; Z = 0; S = -1;
+      }
     if (axis == 'y') {
-        X = 2; Y = 0; Z = 1; S = 1;
-    }
+      X = 2; Y = 0; Z = 1; S = 1;
+      }
     else if (axis == 'Y') {
-        X = 2; Y = 0; Z = 1; S = -1;
-    }
+      X = 2; Y = 0; Z = 1; S = -1;
+      }
     if (axis == 'z') {
-        X = 0; Y = 1; Z = 2; S = 1;
-    }
+      X = 0; Y = 1; Z = 2; S = 1;
+      }
     else if (axis == 'Z') {
-        X = 0; Y = 1; Z = 2; S = -1;
-    }
+      X = 0; Y = 1; Z = 2; S = -1;
+      }
     v->dx = units * (v->mesh->max[X]-v->mesh->min[X]);
     v->dy = units * (v->mesh->max[Y]-v->mesh->min[Y]);
-    v->dz = units * (v->mesh->max[Z]-v->mesh->min[Y]);  // typo
+    v->dz = units * (v->mesh->max[Z]-v->mesh->min[Z]);
     v->nx = resolution * v->dx;
     v->ny = resolution * v->dy;
     v->nz = 1;
@@ -855,24 +955,23 @@ void fab_shade_mesh(struct fab_vars *v, float units, float resolution, char axis
     v->ymin = units * v->mesh->min[Y];
     v->zmin = units * v->mesh->min[Z];
     v->bit_depth = 16;
-
+    //
     // alloc and init
+    //
     v->array = malloc(v->ny*sizeof(uint32_t *));
-    for (i = 0; i < v->ny; ++i)
-    {
-        v->array[i] = malloc(v->nx*sizeof(uint32_t));
-        memset(v->array[i],'\0',v->nx*sizeof(uint32_t));
-    }
-
+    for (i = 0; i < v->ny; ++i) {
+      v->array[i] = malloc(v->nx*sizeof(uint32_t));
+      memset(v->array[i],'\0',v->nx*sizeof(uint32_t));
+      }
     //
     // draw triangles into array
     //
     v->mesh->triangle = v->mesh->first;
     while (v->mesh->triangle != 0) {
-        fab_shade_triangle(v, units, S, X, Y, Z);
-        v->mesh->triangle = v->mesh->triangle->next;
-    }
-}
+      fab_shade_triangle(v, units, S, X, Y, Z);
+      v->mesh->triangle = v->mesh->triangle->next;
+      }
+   }
 
 //
 // array operations
@@ -887,7 +986,8 @@ void fab_png_array(struct fab_vars *v) {
    png_byte *ptr;
    png_colorp palette;
    png_color color;
-   png_uint_32 num_palette;
+   //png_uint_32 num_palette;
+   int num_palette;
    
    if (png_get_bit_depth(v->png_ptr, v->info_ptr) == 1) {
       if (png_get_color_type(v->png_ptr, v->info_ptr) == PNG_COLOR_TYPE_PALETTE)
@@ -927,7 +1027,7 @@ void fab_png_array(struct fab_vars *v) {
          for (y = 0; y < v->ny; ++y)
             for (x = 0; x < v->nx; ++x) {
          		ptr = &(v->row_pointers[y][x*2]);
-         	   v->array[y][x] = ptr[0];
+         	   v->array[y][x] = (int) ((1.0-ptr[1]/255.0)*255 + (0.0+(ptr[1]/255.0))*ptr[0]);
          	   }
       else if (png_get_color_type(v->png_ptr, v->info_ptr) == PNG_COLOR_TYPE_RGB)
          for (y = 0; y < v->ny; ++y)
@@ -939,7 +1039,7 @@ void fab_png_array(struct fab_vars *v) {
          for (y = 0; y < v->ny; ++y)
             for (x = 0; x < v->nx; ++x) {
          		ptr = &(v->row_pointers[y][x*4]);
-         	   v->array[y][x] = (int) ((ptr[0] + ptr[1] + ptr[2])/3.0);
+         	   v->array[y][x] = (int) ((1.0-ptr[3]/255.0)*255 + (0.0+(ptr[3]/255.0))*((ptr[0] + ptr[1] + ptr[2])/3.0));
          	   }
       else if (png_get_color_type(v->png_ptr, v->info_ptr) == PNG_COLOR_TYPE_PALETTE) {
          for (y = 0; y < v->ny; ++y)
@@ -1190,7 +1290,6 @@ void test_fab_distances(struct fab_vars *v) {
    // find Euclidean distance to interior in a thresholded array
    //
    int x,y;
-   double d;
    //
    // allocate arrays if needed
    //
@@ -1622,6 +1721,55 @@ void fab_directions(struct fab_vars *v) {
    }
 
 //
+// mesh operations
+//
+
+void fab_mesh_path(struct fab_vars *v, float units, float resolution) {
+   //
+   // convert mesh to path
+   //
+
+   //
+   // set up path
+   //
+   fab_path_start(v,3);
+   v->dx = units * (v->mesh->max[0]-v->mesh->min[0]);
+   v->dy = units * (v->mesh->max[1]-v->mesh->min[1]);
+   v->dz = units * (v->mesh->max[2]-v->mesh->min[2]);
+   v->nx = resolution * v->dx;
+   v->ny = resolution * v->dy;
+   v->nz = resolution * v->dz;
+   v->xmin = units * v->mesh->min[0];
+   v->ymin = units * v->mesh->min[1];
+   v->zmin = units * v->mesh->min[2];
+   v->bit_depth = 16;
+   //
+   // loop over mesh
+   //
+   v->mesh->triangle = v->mesh->first;
+   while (v->mesh->triangle != 0) {
+      fab_path_segment(v);
+      fab_path_point(v);
+      fab_path_axis(v,(v->nx)*(v->mesh->triangle->v0[0] - v->mesh->min[0])/(v->dx));
+      fab_path_axis(v,(v->ny)*(v->mesh->max[1] - v->mesh->triangle->v0[1])/(v->dy));
+      fab_path_axis(v,(v->nz)*(v->mesh->triangle->v0[2] - v->mesh->min[2])/(v->dz));
+      fab_path_point(v);
+      fab_path_axis(v,(v->nx)*(v->mesh->triangle->v1[0] - v->mesh->min[0])/(v->dx));
+      fab_path_axis(v,(v->ny)*(v->mesh->max[1] - v->mesh->triangle->v1[1])/(v->dy));
+      fab_path_axis(v,(v->nz)*(v->mesh->triangle->v1[2] - v->mesh->min[2])/(v->dz));
+      fab_path_point(v);
+      fab_path_axis(v,(v->nx)*(v->mesh->triangle->v2[0] - v->mesh->min[0])/(v->dx));
+      fab_path_axis(v,(v->ny)*(v->mesh->max[1] - v->mesh->triangle->v2[1])/(v->dy));
+      fab_path_axis(v,(v->nz)*(v->mesh->triangle->v2[2] - v->mesh->min[2])/(v->dz));
+      fab_path_point(v);
+      fab_path_axis(v,(v->nx)*(v->mesh->triangle->v0[0] - v->mesh->min[0])/(v->dx));
+      fab_path_axis(v,(v->ny)*(v->mesh->max[1] - v->mesh->triangle->v0[1])/(v->dy));
+      fab_path_axis(v,(v->nz)*(v->mesh->triangle->v0[2] - v->mesh->min[2])/(v->dz));
+      v->mesh->triangle = v->mesh->triangle->next;
+      }
+   }
+
+//
 // path operations
 //
 
@@ -1967,9 +2115,11 @@ void fab_path_array(struct fab_vars *vin, struct fab_vars *vout, int nx, int ny,
 
 void fab_follow(struct fab_vars *v, float error, int y, int x, int z) {
     //
-    // create path by following edge directions
+    // create path by following edge directions at x,y
+    //   error is allowable deviation before stroking (in pixel units)
+    //   z is layer height (ignored for 2D paths)
     //
-    int xnew,ynew;
+    int xnew=0,ynew=0;
     float xmean,ymean;
     float dx,dy,nx,ny,d;
     int xcur,ycur,xstart,ystart,xseg,yseg,xsum,ysum,nsum;
@@ -2000,7 +2150,8 @@ void fab_follow(struct fab_vars *v, float error, int y, int x, int z) {
     fab_path_point(v);
     fab_path_axis(v,xstart);
     fab_path_axis(v,ystart);
-    fab_path_axis(v,z);
+    if (v->path->dof > 2)
+       fab_path_axis(v,z);
     while (1) {
 		//
 		// accumulate current point
@@ -2106,7 +2257,8 @@ void fab_follow(struct fab_vars *v, float error, int y, int x, int z) {
 				fab_path_point(v);
 				fab_path_axis(v,xnew);
 				fab_path_axis(v,ynew);
-				fab_path_axis(v,z);
+            if (v->path->dof > 2)
+				   fab_path_axis(v,z);
 				break;
 		}
 		//
@@ -2120,7 +2272,8 @@ void fab_follow(struct fab_vars *v, float error, int y, int x, int z) {
 			fab_path_point(v);
 			fab_path_axis(v,xcur);
 			fab_path_axis(v,ycur);
-			fab_path_axis(v,z);
+         if (v->path->dof > 2)
+			   fab_path_axis(v,z);
 			xsum = 0;
 			ysum = 0;
 			nsum = 0;
@@ -2137,10 +2290,10 @@ void fab_follow(struct fab_vars *v, float error, int y, int x, int z) {
 
 void fab_vectorize(struct fab_vars *v, float error, int z) {
    //
-   // vectorize edge directions
+   // vectorize xy edge directions
    //    error is transverse distance from segment mean
    //       in lattice units
-   //    z is layer height
+   //    z is layer height (ignored for 2D paths)
    //
    int x, y;
    //

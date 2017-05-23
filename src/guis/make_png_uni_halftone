@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # make_png_uni_halftone
 #    .png to .uni halftone GUI wrapper

@@ -23,59 +23,16 @@ ADD_EXECUTABLE(math_stl math_stl.cpp trisolver.cpp)
 ADD_EXECUTABLE(math_svg math_svg.cpp edgesolver.cpp)
 ADD_EXECUTABLE(math_stats math_stats.cpp volsolver.cpp)
 
-TARGET_LINK_LIBRARIES (math_png
-   MathTree
-   ${PNG_LIBRARY}
-   ${Boost_THREAD_LIBRARY}
-   ${Boost_SYSTEM_LIBRARY}
-   -lm
-   -pthread
-)
+SET(LIBRARIES
+    MathTree ${PNG_LIBRARY}
+    ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY} pthread)
 
-TARGET_LINK_LIBRARIES (math_ray
-   MathTree
-   ${PNG_LIBRARY}
-   ${Boost_THREAD_LIBRARY}
-   ${Boost_SYSTEM_LIBRARY}
-   -lm
-   -pthread
-)
-
-TARGET_LINK_LIBRARIES (math_dot
-   MathTree
-   ${PNG_LIBRARY}
-   ${Boost_THREAD_LIBRARY}
-   ${Boost_SYSTEM_LIBRARY}
-   -lm
-   -pthread
-)
-
-TARGET_LINK_LIBRARIES (math_stl
-   MathTree
-   ${PNG_LIBRARY}
-   ${Boost_THREAD_LIBRARY}
-   ${Boost_SYSTEM_LIBRARY}
-   -lm
-   -pthread
-)
-
-TARGET_LINK_LIBRARIES (math_svg
-   MathTree
-   ${PNG_LIBRARY}
-   ${Boost_THREAD_LIBRARY}
-   ${Boost_SYSTEM_LIBRARY}
-   -lm
-   -pthread
-)
-
-TARGET_LINK_LIBRARIES (math_stats
-   MathTree
-   ${PNG_LIBRARY}
-   ${Boost_THREAD_LIBRARY}
-   ${Boost_SYSTEM_LIBRARY}
-   -lm
-   -pthread
-)
+TARGET_LINK_LIBRARIES (math_png ${LIBRARIES})
+TARGET_LINK_LIBRARIES (math_ray ${LIBRARIES})
+TARGET_LINK_LIBRARIES (math_dot ${LIBRARIES})
+TARGET_LINK_LIBRARIES (math_stl ${LIBRARIES})
+TARGET_LINK_LIBRARIES (math_svg ${LIBRARIES})
+TARGET_LINK_LIBRARIES (math_stats ${LIBRARIES})
 
 if( ${CMAKE_PROJECT_NAME} MATCHES fabmod )
   install(TARGETS math_png DESTINATION ${PROJECT_SOURCE_DIR}/../bin)

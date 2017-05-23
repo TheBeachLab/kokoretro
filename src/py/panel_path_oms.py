@@ -1,11 +1,11 @@
 #
-# panel_path_epi.py
-#    make .epi from .path
+# panel_path_oms.py
+#    make .oms from .path
 #
 # Neil Gershenfeld
-# CBA MIT 3/10/11
+# CBA MIT 5/25/13
 #
-# (c) Massachusetts Institute of Technology 2011
+# (c) Massachusetts Institute of Technology 2013
 # Permission granted for experimental and personal use;
 # license for commercial sale available from MIT.
 #
@@ -15,29 +15,22 @@ import wx,os
 #
 # panel class
 #
-class path_epi_panel(wx.Panel):
+class path_oms_panel(wx.Panel):
    def __init__(self,parent):
       self.parent = parent
       self.parent.path_file = ''
       #
-      # make epi
+      # make oms
       #
-      def make_epi(event):
+      def make_oms(event):
          if (self.parent.path_file == ''):
-            print 'panel_path_epi: oops -- need path file'
+            print 'panel_path_oms: oops -- need path file'
             return
-         self.parent.epi_file = self.parent.tmp+self.parent.rootname+'.epi'
-         power = self.power.GetValue()
-         speed = self.speed.GetValue()
-         if (self.focus.GetValue()):
-            focus = '1'
-         else:
-            focus = '0'
-         xmin = self.xmin.GetValue()
-         ymin = self.ymin.GetValue()
-         rate = self.rate.GetValue()
-         maxpower = self.maxpower.GetValue()
-         command = 'path_epi '+'\"'+self.parent.path_file+'\"'+' '+'\"'+self.parent.epi_file+'\"'+' '+power+' '+speed+' '+focus+' '+xmin+' '+ymin+' '+' '+rate+' '+maxpower
+         self.parent.oms_file = self.parent.tmp+self.parent.rootname+'.oms'
+         velocity = self.velocity.GetValue()
+         accel = self.accel.GetValue()
+         period = self.period.GetValue()
+         command = 'path_oms '+'\"'+self.parent.path_file+'\"'+' '+'\"'+self.parent.oms_file+'\"'+' '+velocity+' '+accel+' '+period
          print command
          os.system(command)
          self.button.SetMaxSize((self.parent.xsize,self.parent.ysize))
@@ -49,7 +42,7 @@ class path_epi_panel(wx.Panel):
       # send
       #
       def fab_send(event):
-         command = 'fab_send '+'\"'+self.parent.epi_file+'\"'
+         command = 'fab_send '+'\"'+self.parent.oms_file+'\"'
          print command
          os.system(command)
       #
@@ -61,7 +54,7 @@ class path_epi_panel(wx.Panel):
       #
       # label
       #
-      label = wx.StaticText(self,label='to: epi')
+      label = wx.StaticText(self,label='to: oms')
       bold_font = wx.Font(10,wx.DEFAULT,wx.NORMAL,wx.BOLD)
       label.SetFont(bold_font)
       self.sizer.Add(label,(0,0),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
@@ -76,57 +69,45 @@ class path_epi_panel(wx.Panel):
       #
       # controls
       #
-      make = wx.Button(self,label='make .epi')
-      make.Bind(wx.EVT_BUTTON,make_epi)
+      make = wx.Button(self,label='make .oms')
+      make.Bind(wx.EVT_BUTTON,make_oms)
       self.sizer.Add(make,(2,0),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
       #
       row3_panel = wx.Panel(self)
       row3_sizer = wx.GridBagSizer(10,10)
       row3_panel.SetSizer(row3_sizer)
-      row3_sizer.Add(wx.StaticText(row3_panel,label='2D power (%)'),(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
-      row3_sizer.Add(wx.StaticText(row3_panel,label='speed (%)     '),(0,1),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      row3_sizer.Add(wx.StaticText(row3_panel,label='velocity'),(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
       self.sizer.Add(row3_panel,(3,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
       row4_panel = wx.Panel(self)
       row4_sizer = wx.GridBagSizer(10,10)
       row4_panel.SetSizer(row4_sizer)
-      self.power = wx.TextCtrl(row4_panel,-1,'25')
-      row4_sizer.Add(self.power,(0,0))
-      self.speed = wx.TextCtrl(row4_panel,-1,'75')
-      row4_sizer.Add(self.speed,(0,1))
+      self.velocity = wx.TextCtrl(row4_panel,-1,'0.1')
+      row4_sizer.Add(self.velocity,(0,0))
       self.sizer.Add(row4_panel,(4,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
       row5_panel = wx.Panel(self)
       row5_sizer = wx.GridBagSizer(10,10)
       row5_panel.SetSizer(row5_sizer)
-      row5_sizer.Add(wx.StaticText(row5_panel,label='xmin (mm)'),(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
-      row5_sizer.Add(wx.StaticText(row5_panel,label='ymin (mm)'),(0,1),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      row5_sizer.Add(wx.StaticText(row5_panel,label='acceleration'),(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
       self.sizer.Add(row5_panel,(5,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
       row6_panel = wx.Panel(self)
       row6_sizer = wx.GridBagSizer(10,10)
       row6_panel.SetSizer(row6_sizer)
-      self.xmin = wx.TextCtrl(row6_panel,-1,'0')
-      row6_sizer.Add(self.xmin,(0,0))
-      self.ymin = wx.TextCtrl(row6_panel,-1,'0')
-      row6_sizer.Add(self.ymin,(0,1))
+      self.accel = wx.TextCtrl(row6_panel,-1,'5.0')
+      row6_sizer.Add(self.accel,(0,0))
       self.sizer.Add(row6_panel,(6,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
       row7_panel = wx.Panel(self)
       row7_sizer = wx.GridBagSizer(10,10)
       row7_panel.SetSizer(row7_sizer)
-      row7_sizer.Add(wx.StaticText(row7_panel,label='3D power (%)'),(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
-      row7_sizer.Add(wx.StaticText(row7_panel,label='rate                '),(0,1),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      row7_sizer.Add(wx.StaticText(row7_panel,label='period'),(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
       self.sizer.Add(row7_panel,(7,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
       row8_panel = wx.Panel(self)
       row8_sizer = wx.GridBagSizer(10,10)
       row8_panel.SetSizer(row8_sizer)
-      self.maxpower = wx.TextCtrl(row8_panel,-1,'100')
-      row8_sizer.Add(self.maxpower,(0,0))
-      self.rate = wx.TextCtrl(row8_panel,-1,'500')
-      row8_sizer.Add(self.rate,(0,1))
+      self.period = wx.TextCtrl(row8_panel,-1,'10000')
+      row8_sizer.Add(self.period,(0,0))
       self.sizer.Add(row8_panel,(8,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
-      #
-      self.focus = wx.CheckBox(self,-1,'autofocus')
-      self.sizer.Add(self.focus,(9,0),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)

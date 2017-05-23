@@ -37,6 +37,9 @@ class cad_png_panel(wx.Panel):
       def make_png(event):
          if (self.parent.rootname == ''):
             return
+         #
+         # generate .math file
+         #
          tmp_cad_file = self.parent.tmp+self.parent.rootname+'.cad'
          cad_file = open(tmp_cad_file,'w')
          cad_file.write(self.parent.cad_panel.text.GetValue())
@@ -61,7 +64,7 @@ class cad_png_panel(wx.Panel):
          end = string.find(cad_info,'\n',start)
          zmin = float(cad_info[start:end])
          start = 8+string.find(cad_info,'layers:')
-         resolution = self.parent.png_panel.resolution.GetValue()
+         resolution = self.parent.cad_png_panel.resolution.GetValue()
          if (start > 7):
             end = string.find(cad_info,'\n',start)
             number = int(cad_info[start:end])
@@ -72,10 +75,16 @@ class cad_png_panel(wx.Panel):
          parent.zmin = zmin
          parent.zmax = zmin+dz
          parent.units = units
+         #
+         # generate .png file
+         #
          self.parent.png_file = self.parent.tmp+self.parent.rootname+'.png'
          command = 'math_png '+'\"'+math_file+'\"'+' '+'\"'+self.parent.png_file+'\"'+' '+resolution+' '+str(number)
          print command
          os.system(command)
+         #
+         # update image
+         #
          info = png_info(self.parent.png_file)
          self.info.SetLabel(cad_info+info)
          png_image = wx.Image(self.parent.png_file)
@@ -93,6 +102,10 @@ class cad_png_panel(wx.Panel):
          self.bitmap.Show()
          self.parent.Layout()
          self.parent.Fit()
+         #
+         # update panels
+         #
+         parent.update_panels()
       #
       # panel
       #

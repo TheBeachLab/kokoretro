@@ -3,9 +3,9 @@
 //    convert path to Resonetics excimer micromachining center .oms
 //
 // Neil Gershenfeld
-// CBA MIT 9/18/10
+// CBA MIT 6/4/13
 //
-// (c) Massachusetts Institute of Technology 2010
+// (c) Massachusetts Institute of Technology 2013
 // Permission granted for experimental and personal use;
 // license for commercial sale available from MIT.
 //
@@ -20,14 +20,14 @@ void fab_write_oms(struct fab_vars *v, char *output_file_name, float velocity, f
    float x,y,scale,xoffset,yoffset;
    float slew_velocity = 1.0;
    float slew_acceleration = 5.0;
-   int npts,nsegs;
+   int npts=0,nsegs=0;
    int settle = 100;
    scale = v->dx/(v->nx-1.0); // mm
    xoffset = v->xmin;
    yoffset = v->ymin;
    output_file = fopen(output_file_name,"w");
    fprintf(output_file,"AA LP0,0,0,0,0\n"); // set origin
-   fprintf(output_file,"PP%d\n",period); // set pulse period
+   fprintf(output_file,"PP%d\n",period); // set pulse period (in us)
    v->path->segment = v->path->first;
    while (1) {
       //
@@ -36,10 +36,14 @@ void fab_write_oms(struct fab_vars *v, char *output_file_name, float velocity, f
       v->path->segment->point = v->path->segment->first;
       x = xoffset + scale * v->path->segment->point->first->value;
       y = yoffset + scale * (v->ny - v->path->segment->point->first->next->value);
-      fprintf(output_file,"VL%.1f,%.1f\n",slew_velocity,slew_velocity);
+      //fprintf(output_file,"VL%.1f,%.1f\n",slew_velocity,slew_velocity);
+      // redundantly include pulses/s in VL
+      fprintf(output_file,"VL%.1f,%.1f,,%.0f\n",slew_velocity,slew_velocity,1.0e6/period);
       fprintf(output_file,"AC%.1f,%.1f\n",slew_acceleration,slew_acceleration);
       fprintf(output_file,"MA%f,%f\n",x,y);
-      fprintf(output_file,"VL%.1f,%.1f\n",velocity,velocity);
+      //fprintf(output_file,"VL%.1f,%.1f\n",velocity,velocity);
+      // redundantly include pulses/s in VL
+      fprintf(output_file,"VL%.1f,%.1f,,%.0f\n",velocity,velocity,1.0e6/period);
       fprintf(output_file,"AC%.1f,%.1f\n",acceleration,acceleration);
       fprintf(output_file,"WT%d\n",settle);
       nsegs += 1;
@@ -103,7 +107,7 @@ main(int argc, char **argv) {
    else if (argc == 6) {
       sscanf(argv[3],"%f",&velocity);
       sscanf(argv[4],"%f",&acceleration);
-      sscanf(argv[6],"%d",&period);
+      sscanf(argv[5],"%d",&period);
       }
    //
    // read path

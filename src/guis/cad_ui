@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import wx
 import wx.py
@@ -1138,7 +1138,7 @@ cad.function = circle(0, 0, 0.5)''')
             # this pair of libraries
             cad_file.write('from string import *\nfrom math import *\n')
             
-            # To allow for included files, we modify the python system path
+            # To allow for included files, we modify the python2 system path
             if self.cadFileDir:
                 cad_file.write('import sys\nsys.path.append("%s")\n' %
                                self.cadFileDir)
@@ -1154,7 +1154,7 @@ cad.function = circle(0, 0, 0.5)''')
             filename = '_cad_ui_tmp.math'
         
         if BUNDLED:
-            command = ['../MacOS/python', 'cad_math',
+            command = ['../MacOS/python2', 'cad_math',
                        '_cad_ui_tmp.cad',target]
         else:
             command = ['cad_math', '_cad_ui_tmp.cad', filename]

@@ -74,7 +74,7 @@ class math_png_panel(wx.Panel):
          parent.zmin = zmin
          parent.zmax = zmin+dz
          parent.units = units
-         resolution = self.parent.png_panel.resolution.GetValue()
+         resolution = self.parent.math_png_panel.resolution.GetValue()
          self.parent.png_file = self.parent.tmp+self.parent.rootname+'.png'
          command = 'math_png '+'\"'+tmp_math_file+'\"'+' '+'\"'+self.parent.png_file+'\"'+' '+resolution
          print command
@@ -96,6 +96,10 @@ class math_png_panel(wx.Panel):
          self.bitmap.Show()
          self.parent.Layout()
          self.parent.Fit()
+         #
+         # update panels
+         #
+         parent.update_panels()
       #
       # panel
       #

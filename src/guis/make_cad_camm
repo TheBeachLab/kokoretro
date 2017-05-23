@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # make_cad_camm
 #    .cad to .camm GUI wrapper
@@ -33,6 +33,7 @@ app = wx.App()
 # add panels to frame
 #
 frame = fab_frame("make_cad_camm",sys.argv)
+frame.size = frame.size/1.25
 frame.control_panel = control_panel(frame)
 frame.sizer.Add(frame.control_panel,(0,0),span=(1,4),flag=wx.ALIGN_CENTER_HORIZONTAL)
 frame.cad_panel = cad_panel(frame)

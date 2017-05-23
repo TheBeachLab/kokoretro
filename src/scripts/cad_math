@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # cad_math
 #    convert .cad to .math
@@ -50,7 +50,7 @@ if (len(sys.argv) < 3):
     sys.exit()
 
 
-# This line allows python to find other modules in the same folder
+# This line allows python2 to find other modules in the same folder
 # as a .cad file.
 sys.path.append('/'.join(sys.argv[1].split('/')[:-1]))
 

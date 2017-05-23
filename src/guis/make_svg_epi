@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # make_svg_epi
 #    .svg to .epi GUI wrapper
@@ -31,7 +31,7 @@ app = wx.App()
 #
 # add panels to frame
 #
-frame = fab_frame("make_svg_camm",sys.argv)
+frame = fab_frame("make_svg_epi",sys.argv)
 frame.control_panel = control_panel(frame)
 frame.sizer.Add(frame.control_panel,(0,0),span=(1,4),flag=wx.ALIGN_CENTER_HORIZONTAL)
 frame.svg_panel = svg_panel(frame)

@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # fab
 #    GUI wrapper wrapper
 #
 # Neil Gershenfeld
 # CBA MIT
-date = "8/16/12"
+date = "7/11/14"
 #
 # (c) Massachusetts Institute of Technology 2012
 # Permission granted for experimental and personal use;
@@ -45,15 +45,15 @@ def quit(event):
 #
 # labels
 #
-format_text = wx.StaticText(frame,label="from format:")
+format_text = wx.StaticText(frame,label="from input format:")
 format_text.SetFont(bold_font)
 frame_sizer.Add(format_text,(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER_HORIZONTAL))
 #
-process_text = wx.StaticText(frame,label="to process:")
+process_text = wx.StaticText(frame,label="to output process:")
 process_text.SetFont(bold_font)
 frame_sizer.Add(process_text,(0,1),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER_HORIZONTAL))
 #
-program_text = wx.StaticText(frame,label="with program:")
+program_text = wx.StaticText(frame,label="with workflow:")
 program_text.SetFont(bold_font)
 frame_sizer.Add(program_text,(0,2),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER_HORIZONTAL))
 #

@@ -5,7 +5,6 @@ set(CMAKE_BUILD_TYPE Release)
 
 add_subdirectory(core)
 add_subdirectory(solver)
-add_subdirectory(libfab)
 add_subdirectory(scripts)
 add_subdirectory(guis)
 add_subdirectory(py)

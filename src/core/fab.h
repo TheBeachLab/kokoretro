@@ -2,19 +2,25 @@
 // fab.h
 //    fab modules header
 //
-// Neil Gershenfeld
-// CBA MIT 7/4/11
+// Neil Gershenfeld 7/4/13
+// (c) Massachusetts Institute of Technology 2013
 //
-// (c) Massachusetts Institute of Technology 2010
-// Permission granted for experimental and personal use;
-// license for commercial sale available from MIT.
+// This work may be reproduced, modified, distributed,
+// performed, and displayed for any purpose, but must
+// acknowledge the fab modules project. Copyright is
+// retained and must be preserved. The work is provided
+// as is; no warranty is provided, and users accept all 
+// liability.
 //
 
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <png.h>
+#include <gif_lib.h>
+#include <inttypes.h>
 
 #define fab_big 1e10
 
@@ -124,6 +130,10 @@ void fab_threshold(struct fab_vars *v, float threshold);
 void fab_distances(struct fab_vars *v);
 int fab_offset(struct fab_vars *v, float distance);
 void fab_directions(struct fab_vars *v);
+//
+// mesh operations
+//
+void fab_mesh_path(struct fab_vars *v, float units, float resolution);
 //
 // path operations
 //

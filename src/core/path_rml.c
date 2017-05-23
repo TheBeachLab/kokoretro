@@ -2,12 +2,15 @@
 // path_rml.c
 //    convert path to Roland Modela .rml
 //
-// Neil Gershenfeld
-// CBA MIT 9/6/10
+// Neil Gershenfeld 7/19/14
+// (c) Massachusetts Institute of Technology 2014
 //
-// (c) Massachusetts Institute of Technology 2010
-// Permission granted for experimental and personal use;
-// license for commercial sale available from MIT.
+// This work may be reproduced, modified, distributed,
+// performed, and displayed for any purpose, but must
+// acknowledge the fab modules project. Copyright is
+// retained and must be preserved. The work is provided
+// as is; no warranty is provided, and users accept all 
+// liability.
 //
 
 #include "fab.h"
@@ -55,15 +58,16 @@ void fab_write_rml(struct fab_vars *v, char *output_file_name, float speed, int 
       //
       // move up to first point
       //
-      fprintf(output_file,"PU%d,%d;",x,y);
+      fprintf(output_file,"PU%d,%d;\n",x,y);
       //
       // move down
       //
-      if (v->path->dof == 2)
-         fprintf(output_file,"PD%d,%d;",x,y);
+      if (v->path->dof == 2) {
+         fprintf(output_file,"PD%d,%d;\n",x,y);
+         }
       else if (v->path->dof == 3) {
          z = zoffset + zscale * v->path->segment->point->first->next->next->value;
-         fprintf(output_file,"Z%d,%d,%d;",x,y,z);
+         fprintf(output_file,"Z%d,%d,%d;\n",x,y,z);
          }
       else {
          printf("path_rml: path degrees of freedom must be 2 or 3\n");
@@ -79,7 +83,7 @@ void fab_write_rml(struct fab_vars *v, char *output_file_name, float speed, int 
             // conventional
             //
             if (v->path->segment->point->previous == 0) {
-               fprintf(output_file,"PU%d,%d;",x,y);
+               fprintf(output_file,"PU%d,%d;\n",x,y);
                break;
                }
             }
@@ -88,7 +92,7 @@ void fab_write_rml(struct fab_vars *v, char *output_file_name, float speed, int 
             // climb
             //
             if (v->path->segment->point->next == 0) {
-               fprintf(output_file,"PU%d,%d;",x,y);
+               fprintf(output_file,"PU%d,%d;\n",x,y);
                break;
                }
             }
@@ -107,11 +111,12 @@ void fab_write_rml(struct fab_vars *v, char *output_file_name, float speed, int 
             v->path->segment->point = v->path->segment->point->next;
          x = xoffset + xscale * v->path->segment->point->first->value;
          y = yoffset + yscale * (v->ny - v->path->segment->point->first->next->value);
-         if (v->path->dof == 2)
-            fprintf(output_file,"PD%d,%d;",x,y);
+         if (v->path->dof == 2) {
+            fprintf(output_file,"PD%d,%d;\n",x,y);
+            }
          else if (v->path->dof == 3) {
             z = zoffset + zscale * v->path->segment->point->first->next->next->value;
-            fprintf(output_file,"Z%d,%d,%d;",x,y,z);
+            fprintf(output_file,"Z%d,%d,%d;\n",x,y,z);
             }
          else {
             printf("path_rml: path degrees of freedom must be 2 or 3\n");
@@ -122,7 +127,7 @@ void fab_write_rml(struct fab_vars *v, char *output_file_name, float speed, int 
       //
       // check for previous segment
       //
-      fprintf(output_file,"\n",x,y);
+      //fprintf(output_file,"\n",x,y);
       if (v->path->segment->previous == 0)
          break;
       v->path->segment = v->path->segment->previous;
@@ -152,48 +157,27 @@ main(int argc, char **argv) {
    //
    // command line args
    //
-   if (!((argc == 3) || (argc == 4) || (argc == 6) || (argc == 7) || (argc == 8) || (argc == 9))) {
-      printf("command line: path_rml in.path out.rml [speed [xmin ymin [zmin [z_up [direction]]]]]\n");
+   if (!((argc == 3) || (argc == 4)  || (argc == 5) || (argc == 6) || (argc == 7) || (argc == 8) || (argc == 9))) {
+      printf("command line: path_rml in.path out.rml [speed [direction [jog [xmin ymin [zmin]]]]]\n");
       printf("   in.path = input path file\n");
       printf("   out.rml = output Roland Modela file\n");
       printf("   speed = cutting speed (optional, mm/s, default 4)\n");
+      printf("   direction = machining direction (optional, 0 conventional/1 climb, default 1)\n");
+      printf("   jog = jog height (optional, mm, default 1)\n");
       printf("   xmin = left position (optional, mm, default path value)\n");
       printf("   ymin = front position (optional, mm, default path value)\n");
       printf("   zmin = bottom position (optional, -mm, default path value)\n");
-      printf("   z_up = toop up position (optional, mm, default 1)\n");
-      printf("   direction = machining direction (optional, 0 conventional/1 climb, default 1)\n");
       exit(-1);
       }
-   if (argc == 3) {
-      speed = 4;
-      direction = 1;
-      z_up = 1;
-      }
-   else if (argc == 4) {
+   speed = 4;
+   direction = 1;
+   z_up = 1;
+   if (argc >= 4)
       sscanf(argv[3],"%f",&speed);
-      z_up = 1;
-      direction = 1;
-      }
-   else if (argc == 6) {
-      sscanf(argv[3],"%f",&speed);
-      z_up = 1;
-      direction = 1;
-      }
-   else if (argc == 7) {
-      sscanf(argv[3],"%f",&speed);
-      z_up = 1;
-      direction = 1;
-      }
-   else if (argc == 8) {
-      sscanf(argv[3],"%f",&speed);
-      sscanf(argv[7],"%f",&z_up);
-      direction = 1;
-      }
-   else if (argc == 9) {
-      sscanf(argv[3],"%f",&speed);
-      sscanf(argv[7],"%f",&z_up);
-      sscanf(argv[8],"%d",&direction);
-      }
+   if (argc >= 5)
+      sscanf(argv[4],"%d",&direction);
+   if (argc >= 6)
+      sscanf(argv[5],"%f",&z_up);
    //
    // read path
    //
@@ -201,13 +185,12 @@ main(int argc, char **argv) {
    //
    // check origin
    //
-   if ((argc == 6) || (argc == 7) || (argc == 8) || (argc == 9)) {
-      sscanf(argv[4],"%lf",&v.xmin);
-      sscanf(argv[5],"%lf",&v.ymin);
-      }
-   if ((argc == 7) || (argc == 8) || (argc == 9)) {
-      sscanf(argv[6],"%lf",&v.zmin);
-      }
+   if (argc >= 7)
+      sscanf(argv[6],"%lf",&v.xmin);
+   if (argc >= 8)
+      sscanf(argv[7],"%lf",&v.ymin);
+   if (argc >= 9)
+      sscanf(argv[8],"%lf",&v.zmin);
    //
    // write .rml
    //
