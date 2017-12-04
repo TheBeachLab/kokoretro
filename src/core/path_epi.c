@@ -2,20 +2,17 @@
 // path_epi.c
 //    convert path to Epilog lasercutter .epi
 //
-// Neil Gershenfeld 8/18/13
-// (c) Massachusetts Institute of Technology 2013
+// Neil Gershenfeld
+// CBA MIT 9/21/11
 //
-// This work may be reproduced, modified, distributed,
-// performed, and displayed for any purpose, but must
-// acknowledge the fab modules project. Copyright is
-// retained and must be preserved. The work is provided
-// as is; no warranty is provided, and users accept all 
-// liability.
+// (c) Massachusetts Institute of Technology 2011
+// Permission granted for experimental and personal use;
+// license for commercial sale available from MIT.
 //
 
 #include "fab.h"
 
-void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int speed, int focus, float ox, float oy, char loc, int rate, int max_power) {
+void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int max_power, int speed, int focus, int rate) {
    //
    // write path to Epilog lasercutter file
    //
@@ -24,22 +21,8 @@ void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int sp
    float scale,xoffset,yoffset;
    output_file = fopen(output_file_name,"w");
    scale = 600.0*v->dx/(25.4*(v->nx-1.0)); // 600 DPI
-   if (loc == 'l') {
-      xoffset = 600.0*(ox)/25.4;
-      yoffset = 600.0*(oy - v->dy)/25.4;
-      }
-   else if (loc == 'r') {
-      xoffset = 600.0*(ox - v->dx)/25.4;
-      yoffset = 600.0*(oy - v->dy)/25.4;
-      }
-   else if (loc == 'L') {
-      xoffset = 600.0*(ox)/25.4;
-      yoffset = 600.0*(oy)/25.4;
-      }
-   else if (loc == 'R') {
-      xoffset = 600.0*(ox - v->dx)/25.4;
-      yoffset = 600.0*(oy)/25.4;
-      }
+   xoffset = 600.0*v->xmin/25.4;
+   yoffset = 600.0*v->ymin/25.4;
    if (focus == 0)
       // 
       // init with autofocus off
@@ -57,10 +40,10 @@ void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int sp
       //
       // follow segments in reverse order
       //
-      v->path->segment->point = v->path->segment->first;
-      x = xoffset + scale * v->path->segment->point->first->value;
-      y = yoffset + scale * v->path->segment->point->first->next->value;
-      if (v->path->dof >= 3) {
+     v->path->segment->point = v->path->segment->first;
+      x = xoffset + scale * (v->nx - v->path->segment->point->first->value);
+      y = yoffset + scale * (v->ny - v->path->segment->point->first->next->value);
+      if (v->path->dof == 3) {
          z = v->path->segment->point->first->next->next->value;
          if (z != current_z) {
             layer_power = power + (max_power-power) * z / (v->nz - 1.0);
@@ -68,8 +51,6 @@ void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int sp
             current_z = z;
             }
          }
-      if (x < 0) x = 0;
-      if (y < 0) y = 0;
       fprintf(output_file,"PU%d,%d;",x,y);
       nsegs += 1;
       while (1) {
@@ -79,9 +60,9 @@ void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int sp
          if (v->path->segment->point->next == 0)
             break;
          v->path->segment->point = v->path->segment->point->next;
-         x = xoffset + scale * v->path->segment->point->first->value;
-         y = yoffset + scale * v->path->segment->point->first->next->value;
-         if (v->path->dof >= 3) {
+         x = xoffset + scale * (v->nx - v->path->segment->point->first->value);
+         y = yoffset + scale * (v->ny - v->path->segment->point->first->next->value);
+         if (v->path->dof == 3) {
             z = v->path->segment->point->first->next->next->value;
             if (z != current_z) {
                layer_power = power + (max_power-power) * z / (v->nz - 1.0);
@@ -89,12 +70,10 @@ void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int sp
                current_z = z;
                }
             }
-         if (x < 0) x = 0;
-         if (y < 0) y = 0;
          fprintf(output_file,"PD%d,%d;",x,y);
          npts += 1;
          }
-      fprintf(output_file,"\n");
+      fprintf(output_file,"\n",x,y);
       if (v->path->segment == v->path->first)
          break;
       v->path->segment = v->path->segment->previous;
@@ -114,69 +93,85 @@ void fab_write_epi(struct fab_vars *v, char *output_file_name, int power, int sp
    printf("   segments: %d, points: %d\n",nsegs,npts);
    }
 
-int main(int argc, char **argv) {
+main(int argc, char **argv) {
    //
    // local vars
    //
    struct fab_vars v;
    init_vars(&v);
    int power,max_power,speed,focus,rate;
-   float ox,oy;
-   char loc;
    //
    // command line args
    //
-   if (!((argc == 3) || (argc == 4) || (argc == 5) || (argc == 6) || (argc == 8) || (argc == 9) || (argc == 10) || (argc == 11))) {
-      printf("command line: path_epi in.path out.epi [power [speed [focus [x y [ location [rate [max_power]]]]]]]\n");
+   if (!((argc == 3) || (argc == 4) || (argc == 5) || (argc == 6) || (argc == 8) || (argc == 9) || (argc == 10))) {
+      printf("command line: path_epi in.path out.epi [power [speed [focus [xmin ymin [ [rate [max_power]]]]]\n");
       printf("   in.path = input path file\n");
       printf("   out.epi= output Epilog lasercutter file\n");
-      printf("   power = percent power, for minimum z value (optional, 0-100, default 50)\n");
-      printf("   speed = percent speed (optional, 0-100, default 50)\n");
+      printf("   power = percent power (optional, 0-100, default 100)\n");
+      printf("   speed = percent speed (optional, 0-100, default 100)\n");
       printf("   focus = autofocus (optional, 0=off | 1=on, default on)\n");
-      printf("   x = origin x (optional, mm, default 0 = left side of bed)\n");
-      printf("   y = origin y (optional, mm, default 0 = back side of bed, front positive)\n");
-      printf("   location = origin location (optional, bottom left:l, bottom right:r, top left:L, top right:R, default l)\n");
+      printf("   xmin = left position (optional, mm, default path, 0 = left side of bed)\n");
+      printf("   ymin = front position (optional, mm, default path, 0 = back, front positive)\n");
       printf("   rate = pulse rate (optional, frequency, default 2500)\n");
-      printf("   max_power = percent power, for maximum z value (optional, 0-100, default power)\n");
+      printf("   max_power = maximum power for maximum z value (optional, 0-100, default 100)\n");
       exit(-1);
       }
-   power = 50;
-   speed = 50;
-   focus = 1;
-   ox = 0;
-   oy = 0;
-   loc = 'l';
-   rate = 2500;
-   max_power = power;
-   if (argc >= 4) {
+   if (argc == 3) {
+      power = 100;
+      speed = 100;
+      focus = 1;
+      rate = 2500;
+      max_power = 100;
+      }
+   else if (argc == 4) {
       sscanf(argv[3],"%d",&power);
+      speed = 100;
+      focus = 1;
+      rate = 2500;
+      max_power = 100;
       }
-   if (argc >= 5) {
+   else if (argc == 5) {
+      sscanf(argv[3],"%d",&power);
       sscanf(argv[4],"%d",&speed);
+      focus = 1;
+      rate = 2500;
+      max_power = 100;
       }
-   if (argc >= 6) {
+   else if ((argc == 6) || (argc == 8)) {
+      sscanf(argv[3],"%d",&power);
+      sscanf(argv[4],"%d",&speed);
       sscanf(argv[5],"%d",&focus);
+      rate = 2500;
+      max_power = 100;
       }
-   if (argc >= 8) {
-      sscanf(argv[6],"%f",&ox);
-      sscanf(argv[7],"%f",&oy);
+   else if (argc == 9) {
+      sscanf(argv[3],"%d",&power);
+      sscanf(argv[4],"%d",&speed);
+      sscanf(argv[5],"%d",&focus);
+      sscanf(argv[8],"%d",&rate);
+      max_power = 100;
       }
-   if (argc >= 9) {
-      sscanf(argv[8],"%c",&loc);
-      }
-   if (argc >= 10) {
-      sscanf(argv[9],"%d",&rate);
-      }
-   if (argc >= 11) {
-      sscanf(argv[10],"%d",&max_power);
+   else if (argc == 10) {
+      sscanf(argv[3],"%d",&power);
+      sscanf(argv[4],"%d",&speed);
+      sscanf(argv[5],"%d",&focus);
+      sscanf(argv[8],"%d",&rate);
+      sscanf(argv[9],"%d",&max_power);
       }
    //
    // read path
    //
    fab_read_path(&v,argv[1]);
    //
+   // origin
+   //
+   if ((argc == 8) || (argc == 9) || (argc == 10)) {
+      sscanf(argv[6],"%lf",&v.xmin);
+      sscanf(argv[7],"%lf",&v.ymin);
+      }
+   //
    // write .epi
    //
-   fab_write_epi(&v,argv[2],power,speed,focus,ox,oy,loc,rate,max_power);
+   fab_write_epi(&v,argv[2],power,max_power,speed,focus,rate);
    }
 

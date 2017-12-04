@@ -114,8 +114,6 @@ class png_path_halftone_panel(wx.Panel):
       self.invert.SetValue(False)
       self.sizer.Add(self.invert,(5,2))
       #
-      self.parent.path_type = "2D"
-      #
       # fit
       #
       self.Fit()

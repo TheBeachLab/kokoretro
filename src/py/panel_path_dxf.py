@@ -30,6 +30,8 @@ class path_dxf_panel(wx.Panel):
          command = 'path_dxf '+'\"'+self.parent.path_file+'\"'+' '+'\"'+self.parent.dxf_file+'\"'
          print command
          os.system(command)
+         self.button.SetMaxSize((self.parent.xsize,self.parent.ysize))
+         self.button.SetMinSize((self.parent.xsize,self.parent.ysize))
          self.button.Show()
          self.parent.Layout()
          self.parent.Fit()

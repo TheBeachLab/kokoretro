@@ -2,33 +2,40 @@
 # panel_png_path.py
 #    make .path from .png
 #
-# Neil Gershenfeld 9/3/13
-# (c) Massachusetts Institute of Technology 2013
+# Neil Gershenfeld
+# CBA MIT 3/23/13
 #
-# This work may be reproduced, modified, distributed,
-# performed, and displayed for any purpose, but must
-# acknowledge the fab modules project. Copyright is
-# retained and must be preserved. The work is provided
-# as is; no warranty is provided, and users accept all 
-# liability.
+# (c) Massachusetts Institute of Technology 2012
+# Permission granted for experimental and personal use;
+# license for commercial sale available from MIT.
 #
 # imports
 #
-import wx,os,string
-from panel_path import path_panel
+import wx,os
 #
 # panel class
 #
 class png_path_panel(wx.Panel):
-   #
-   # constructor
-   #
    def __init__(self,parent):
       self.parent = parent
       self.parent.png_file = ''
       self.parent.zmin = ''
       self.parent.zmax = ''
       self.parent.units = 1
+      #
+      # view path
+      #
+      def view_path(event):
+         if (self.parent.path_file == ''):
+            print "png_path: oops -- must make .path first"
+            return
+         self.parent.ps_file = self.parent.tmp+self.parent.rootname+'.ps'
+         command = 'path_ps '+'\"'+self.parent.path_file+'\"'+' '+'\"'+self.parent.ps_file+'\"'+" 3"
+         print command
+         os.system(command)
+         command = 'fab_send '+'\"'+self.parent.ps_file+'\"'
+         print command
+         os.system(command)
       #
       # make path
       #
@@ -38,65 +45,157 @@ class png_path_panel(wx.Panel):
             return
          self.parent.path_file = self.parent.tmp+self.parent.rootname+'.path'
          path_png = self.parent.tmp+self.parent.rootname+'.path.png'
-         selection = self.path_type.GetValue()
-         if (selection == "2D"):
-            diameter = self.diameter_2D.GetValue()
-            number = self.number_2D.GetValue()
-            overlap = self.overlap_2D.GetValue()
-            error = self.error_2D.GetValue()
-            intensity = self.intensity_2D.GetValue()
-            command = 'png_path '+'\"'+self.parent.png_file+'\"'+' '+'\"'+self.parent.path_file+'\"'+' '+error+' '+diameter+' '+number+' '+overlap+' '+intensity
-         elif (selection == "3D plane"):
-            diameter = self.diameter_plane.GetValue()
-            number = self.number_plane.GetValue()
-            overlap = self.overlap_plane.GetValue()
-            error = self.error_plane.GetValue()
-            intensity = self.intensity_plane.GetValue()
-            z = self.z_plane.GetValue()
-            command = 'png_path '+'\"'+self.parent.png_file+'\"'+' '+'\"'+self.parent.path_file+'\"'+' '+error+' '+diameter+' '+number+' '+overlap+' '+intensity+' '+intensity+' '+z
-         elif (selection == "3D rough"):
-            diameter = self.diameter_rough.GetValue()
-            number = self.number_rough.GetValue()
-            overlap = self.overlap_rough.GetValue()
-            error = self.error_rough.GetValue()
-            itop = self.itop_rough.GetValue()
-            ibot = self.ibot_rough.GetValue()
-            ztop = self.ztop_rough.GetValue()
-            zbot = self.zbot_rough.GetValue()
-            zstep = self.zstep_rough.GetValue()
-            command = 'png_path '+'\"'+self.parent.png_file+'\"'+' '+'\"'+self.parent.path_file+'\"'+' '+error+' '+diameter+' '+number+' '+overlap+' '+itop+' '+ibot+' '+ztop+' '+zbot+' '+zstep
-         elif (selection == "3D finish"):
-            diameter = self.diameter_finish.GetValue()
-            overlap = self.overlap_finish.GetValue()
-            error = self.error_finish.GetValue()
-            itop = self.itop_finish.GetValue()
-            ibot = self.ibot_finish.GetValue()
-            ztop = self.ztop_finish.GetValue()
-            zbot = self.zbot_finish.GetValue()
-            clearance_length = self.clearance_length_finish.GetValue()
-            clearance_diameter = self.clearance_diameter_finish.GetValue()
-            number = '0'
-            zstep = '0'
-            if self.xz_finish.GetValue():
+         error = self.error.GetValue()
+         diameter = self.diameter.GetValue()
+         number = self.number.GetValue()
+         overlap = self.overlap.GetValue()
+         threshold = self.threshold.GetValue()
+         zstep = self.frame3_zstep.GetValue()
+         if (self.frame3_xy.GetValue() | self.frame3_xz.GetValue() | self.frame3_yz.GetValue()):
+            #
+            # 3D path
+            #
+            if ((parent.zmin != '') & (self.frame3_zbot.GetValue() == '')):
+               #self.frame3_zbot.SetValue(str(parent.units*parent.zmin))
+               self.frame3_zbot.SetValue(str(parent.units*(parent.zmin-parent.zmax)))
+               self.frame3_ibot.SetValue('0')
+            if ((parent.zmax != '') & (self.frame3_ztop.GetValue() == '')):
+               #self.frame3_ztop.SetValue(str(parent.units*parent.zmax))
+               self.frame3_ztop.SetValue('0')
+               self.frame3_itop.SetValue('1')
+            itop = self.frame3_itop.GetValue()
+            ibot = self.frame3_ibot.GetValue()
+            ztop = self.frame3_ztop.GetValue()
+            zbot = self.frame3_zbot.GetValue()
+            if self.frame3_xz.GetValue():
                xz = "1"
             else:
                xz = "0"
-            if self.yz_finish.GetValue():
+            if self.frame3_yz.GetValue():
                yz = "1"
             else:
                yz = "0"
-            xy = "0"
-            if self.flat_end_finish.GetValue():
-               tool_type = 'f'
-            elif self.ball_end_finish.GetValue():
-               tool_type = 'b'
-            command = 'png_path '+'\"'+self.parent.png_file+'\"'+' '+'\"'+self.parent.path_file+'\"'+' '+error+' '+diameter+' '+number+' '+overlap+' '+itop+' '+ibot+' '+ztop+' '+zbot+' '+zstep+' '+xz+' '+yz+' '+xy+' '+tool_type+' '+clearance_length+' '+clearance_diameter
+            if self.frame3_xy.GetValue():
+               xy = "1"
+            else:
+               xy = "0"
+            self.parent.zmax = float(ztop)
+            self.parent.zmin = float(zbot)
+            self.parent.units = 1
+            #if self.frame3_flat.GetValue():
+            #   tool_type = "f"
+            #if self.frame3_ball.GetValue():
+            #   tool_type = "b"
+            #cut_depth = '0'
+            #command = 'png_path '+'\"'+self.parent.png_file+'\"'+' '+'\"'+self.parent.path_file+'\"'+' '+error+' '+diameter+' '+number+' '+overlap+' '+itop+' '+ibot+' '+ztop+' '+zbot+' '+zstep+' '+xz+' '+yz+' '+xy+' '+tool_type+' '+cut_depth
+            command = 'png_path '+'\"'+self.parent.png_file+'\"'+' '+'\"'+self.parent.path_file+'\"'+' '+error+' '+diameter+' '+number+' '+overlap+' '+itop+' '+ibot+' '+ztop+' '+zbot+' '+zstep+' '+xz+' '+yz+' '+xy
+         else:
+            #
+            # 2D path
+            #
+            z = self.z.GetValue()
+            self.parent.zmax = float(z)
+            self.parent.zmin = float(z)
+            self.parent.units = 1
+            command = 'png_path '+'\"'+self.parent.png_file+'\"'+' '+'\"'+self.parent.path_file+'\"'+' '+error+' '+diameter+' '+number+' '+overlap+' '+threshold+' '+threshold+' '+z
          print command
          ret = os.system(command)
          if (ret == 0):
-            self.path_viewer.draw(self.parent.path_file)
-            #self.parent.Layout()
-            #self.parent.Fit()
+            command = 'path_png '+'\"'+self.parent.path_file+'\"'+' '+'\"'+path_png+'\"'
+            print command
+            os.system(command)
+            command = 'png_scale '+'\"'+path_png+'\"'+' '+'\"'+path_png+'\"'+' 1 0'
+            print command
+            os.system(command)
+            path_image = wx.Image(path_png)
+            path_image = wx.Image.Blur(path_image,1)
+            (nx,ny) = path_image.GetSize()
+            ratio = float(ny)/float(nx)
+            if (ratio > 1):
+               self.parent.ysize = self.parent.size
+               self.parent.xsize = self.parent.size/ratio
+            else:
+               self.parent.ysize = self.parent.size*ratio
+               self.parent.xsize = self.parent.size
+            wx.Image.Rescale(path_image,self.parent.xsize,self.parent.ysize,quality=wx.IMAGE_QUALITY_HIGH)
+            path_bitmap = path_image.ConvertToBitmap()
+            self.bitmap.SetBitmap(path_bitmap)
+            self.bitmap.Show()
+            self.parent.Layout()
+            self.parent.Fit()
+         else:
+            self.bitmap.Hide()
+            self.parent.Layout()
+            self.parent.Fit()
+      #
+      # 3D path dialog
+      #
+      def quit3(event):
+         self.frame3.Hide()
+      #
+      def path3(event):
+         if ((parent.zmin != '') & (self.frame3_zbot.GetValue() == '')):
+            #self.frame3_zbot.SetValue(str(parent.units*parent.zmin))
+            self.frame3_zbot.SetValue(str(parent.units*(parent.zmin-parent.zmax)))
+            self.frame3_ibot.SetValue('0')
+         if ((parent.zmax != '') & (self.frame3_ztop.GetValue() == '')):
+            #self.frame3_ztop.SetValue(str(parent.units*parent.zmax))
+            self.frame3_ztop.SetValue('0')
+            self.frame3_itop.SetValue('1')
+         self.frame3.Show()
+      #
+      self.frame3 = wx.Frame(None, -1, '3D settings')
+      self.frame3_sizer = wx.GridBagSizer(10,10)
+      self.frame3.SetSizer(self.frame3_sizer)
+      #
+      self.frame3_sizer.Add(wx.StaticText(self.frame3,label='top intensity (0-1):'),(0,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      self.frame3_itop = wx.TextCtrl(self.frame3,-1,'0.5')
+      self.frame3_sizer.Add(self.frame3_itop,(0,1))
+      #
+      self.frame3_sizer.Add(wx.StaticText(self.frame3,label='top height (mm):'),(0,2),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      self.frame3_ztop = wx.TextCtrl(self.frame3,-1,'')
+      self.frame3_sizer.Add(self.frame3_ztop,(0,3))
+      #
+      self.frame3_sizer.Add(wx.StaticText(self.frame3,label='bottom intensity (0-1):'),(1,0),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      self.frame3_ibot = wx.TextCtrl(self.frame3,-1,'0.5')
+      self.frame3_sizer.Add(self.frame3_ibot,(1,1))
+      #
+      self.frame3_sizer.Add(wx.StaticText(self.frame3,label='bottom height (mm):'),(1,2),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      self.frame3_zbot = wx.TextCtrl(self.frame3,-1,'')
+      self.frame3_sizer.Add(self.frame3_zbot,(1,3))
+      #
+      self.frame3_xy = wx.CheckBox(self.frame3,-1,'xy rough',(10,10))
+      self.frame3_sizer.Add(self.frame3_xy,(2,0),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      #
+      self.frame3_sizer.Add(wx.StaticText(self.frame3,label='cut depth (mm):'),(2,2),flag=(wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT))
+      self.frame3_zstep = wx.TextCtrl(self.frame3,-1,'1')
+      self.frame3_sizer.Add(self.frame3_zstep,(2,3))
+      #
+      self.finish_panel = wx.Panel(self.frame3)
+      self.finish_sizer = wx.GridBagSizer(10,10)
+      self.finish_panel.SetSizer(self.finish_sizer)
+      self.frame3_xz = wx.CheckBox(self.finish_panel,-1,'xz finish',(10,10))
+      self.finish_sizer.Add(self.frame3_xz,(0,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      self.frame3_yz = wx.CheckBox(self.finish_panel,-1,'yz finish',(10,10))
+      self.finish_sizer.Add(self.frame3_yz,(0,1),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      self.frame3_sizer.Add(self.finish_panel,(3,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
+      #
+      self.type_panel = wx.Panel(self.frame3)
+      self.type_sizer = wx.GridBagSizer(10,10)
+      self.type_panel.SetSizer(self.type_sizer)
+      self.frame3_flat = wx.RadioButton(self.type_panel,label='flat end',style=wx.RB_GROUP)
+      self.type_sizer.Add(self.frame3_flat,(0,0))
+      #self.frame3_ball = wx.RadioButton(self.type_panel,label='ball end')
+      #self.type_sizer.Add(self.frame3_ball,(0,1))
+      self.frame3_sizer.Add(self.type_panel,(4,0),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      #
+      self.frame3_quit = wx.Button(self.frame3,label='close')
+      self.frame3_quit.Bind(wx.EVT_BUTTON,quit3)
+      self.frame3_sizer.Add(self.frame3_quit,(4,2),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      #
+      self.frame3.Layout()
+      self.frame3.Fit()
+      self.frame3.Hide()
       #
       # panel
       #
@@ -109,238 +208,80 @@ class png_path_panel(wx.Panel):
       label = wx.StaticText(self,label='to: path')
       bold_font = wx.Font(10,wx.DEFAULT,wx.NORMAL,wx.BOLD)
       label.SetFont(bold_font)
-      self.sizer.Add(label,(0,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      self.sizer.Add(label,(0,0),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
       #
       # image
       #
-      self.path_viewer = path_panel(self)
-      self.sizer.Add(self.path_viewer,(1,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      image = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, (self.parent.size,self.parent.size))
+      self.bitmap = wx.StaticBitmap(self,-1,image)
+      self.sizer.Add(self.bitmap,(1,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL))
+      self.bitmap.Hide()
       #
       # controls
       #
-      make_panel = wx.Panel(self)
-      make_sizer = wx.GridBagSizer(10,10)
-      make_panel.SetSizer(make_sizer)
-      make_button = wx.Button(make_panel,label='make .path')
-      make_button.Bind(wx.EVT_BUTTON,make_path)
-      make_sizer.Add(make_button,(0,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
-      make_sizer.Add(wx.StaticText(make_panel,label='type:'),(0,1),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.path_types = ["2D","3D plane","3D rough","3D finish"]
-      self.path_type = wx.ComboBox(make_panel,size=(100,-1),value="2D",choices=self.path_types,style=wx.CB_READONLY)
-      self.parent.path_type = "2D"
-      self.path_type.Bind(wx.EVT_COMBOBOX,self.path_type_handler)
-      make_sizer.Add(self.path_type,(0,2),flag=wx.ALIGN_LEFT)
-      self.sizer.Add(make_panel,(2,0),flag=(wx.ALIGN_CENTER_HORIZONTAL))
+      row2_panel = wx.Panel(self)
+      row2_sizer = wx.GridBagSizer(10,10)
+      row2_panel.SetSizer(row2_sizer)
+      make = wx.Button(row2_panel,label='make .path')
+      make.Bind(wx.EVT_BUTTON,make_path)
+      row2_sizer.Add(make,(0,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      view = wx.Button(row2_panel,label='view .path')
+      view.Bind(wx.EVT_BUTTON,view_path)
+      row2_sizer.Add(view,(0,1),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      self.sizer.Add(row2_panel,(2,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
-      # 2D panel
+      row3_panel = wx.Panel(self)
+      row3_sizer = wx.GridBagSizer(10,10)
+      row3_panel.SetSizer(row3_sizer)
+      row3_sizer.Add(wx.StaticText(row3_panel,label='  diameter (mm)'),(0,0),flag=(wx.ALIGN_RIGHT))
+      row3_sizer.Add(wx.StaticText(row3_panel,label='offsets (-1 to fill)'),(0,1),flag=(wx.ALIGN_LEFT))
+      self.sizer.Add(row3_panel,(3,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
-      panel_2D = wx.Panel(self)
-      sizer_2D = wx.GridBagSizer(10,10)
-      panel_2D.SetSizer(sizer_2D)
+      row4_panel = wx.Panel(self)
+      row4_sizer = wx.GridBagSizer(10,10)
+      row4_panel.SetSizer(row4_sizer)
+      self.diameter = wx.TextCtrl(row4_panel,-1,'0.25')
+      row4_sizer.Add(self.diameter,(0,0),flag=(wx.ALIGN_RIGHT))
+      self.number = wx.TextCtrl(row4_panel,-1,'1')
+      row4_sizer.Add(self.number,(0,1),flag=(wx.ALIGN_LEFT))
+      self.sizer.Add(row4_panel,(4,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
-      sizer_2D.Add(wx.StaticText(panel_2D,label='diameter (mm)'),(0,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.diameter_2D = wx.TextCtrl(panel_2D,-1,'0.25')
-      sizer_2D.Add(self.diameter_2D,(0,1),flag=(wx.ALIGN_LEFT))
-      self.number_2D = wx.TextCtrl(panel_2D,-1,'1')
-      sizer_2D.Add(self.number_2D,(0,2),flag=(wx.ALIGN_RIGHT))
-      sizer_2D.Add(wx.StaticText(panel_2D,label='offsets (-1 to fill)'),(0,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
+      row5_panel = wx.Panel(self)
+      row5_sizer = wx.GridBagSizer(10,10)
+      row5_panel.SetSizer(row5_sizer)
+      row5_sizer.Add(wx.StaticText(row5_panel,label='         overlap (0-1)'),(0,0),flag=(wx.ALIGN_RIGHT))
+      row5_sizer.Add(wx.StaticText(row5_panel,label='2D threshold (0-1)'),(0,1),flag=(wx.ALIGN_LEFT))
+      self.sizer.Add(row5_panel,(5,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
-      sizer_2D.Add(wx.StaticText(panel_2D,label='overlap (0-1)'),(1,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.overlap_2D = wx.TextCtrl(panel_2D,-1,'0.5')
-      sizer_2D.Add(self.overlap_2D,(1,1),flag=(wx.ALIGN_RIGHT))
-      self.error_2D = wx.TextCtrl(panel_2D,-1,'1.1')
-      sizer_2D.Add(self.error_2D,(1,2),flag=(wx.ALIGN_RIGHT))
-      sizer_2D.Add(wx.StaticText(panel_2D,label='error (pixels)'),(1,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
+      row6_panel = wx.Panel(self)
+      row6_sizer = wx.GridBagSizer(10,10)
+      row6_panel.SetSizer(row6_sizer)
+      self.overlap = wx.TextCtrl(row6_panel,-1,'0.5')
+      row6_sizer.Add(self.overlap,(0,0),flag=(wx.ALIGN_RIGHT))
+      self.threshold = wx.TextCtrl(row6_panel,-1,'0.5')
+      row6_sizer.Add(self.threshold,(0,1),flag=(wx.ALIGN_LEFT))
+      self.sizer.Add(row6_panel,(6,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
-      sizer_2D.Add(wx.StaticText(panel_2D,label='intensity (0-1)'),(2,1),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.intensity_2D = wx.TextCtrl(panel_2D,-1,'0.5')
-      sizer_2D.Add(self.intensity_2D,(2,2),flag=(wx.ALIGN_RIGHT))
+      row7_panel = wx.Panel(self)
+      row7_sizer = wx.GridBagSizer(10,10)
+      row7_panel.SetSizer(row7_sizer)
+      row7_sizer.Add(wx.StaticText(row7_panel,label='     error (pixels)'),(0,0),flag=(wx.ALIGN_RIGHT))
+      row7_sizer.Add(wx.StaticText(row7_panel,label=' 2D z (mm)        '),(0,1),flag=(wx.ALIGN_LEFT))
+      self.sizer.Add(row7_panel,(7,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
-      self.sizer.Add(panel_2D,(3,0),flag=(wx.ALIGN_CENTER_HORIZONTAL))
-      self.type_panel = panel_2D
-      self.type_panels = [panel_2D]
+      row8_panel = wx.Panel(self)
+      row8_sizer = wx.GridBagSizer(10,10)
+      row8_panel.SetSizer(row8_sizer)
+      self.error = wx.TextCtrl(row8_panel,-1,'1.1')
+      row8_sizer.Add(self.error,(0,0),flag=(wx.ALIGN_RIGHT))
+      self.z = wx.TextCtrl(row8_panel,-1,'0')
+      row8_sizer.Add(self.z,(0,1),flag=(wx.ALIGN_LEFT))
+      self.sizer.Add(row8_panel,(8,0),span=(1,2),flag=(wx.ALIGN_CENTER_HORIZONTAL))
       #
-      # 3D plane panel
-      #
-      panel_3D_plane = wx.Panel(self)
-      sizer_3D_plane = wx.GridBagSizer(10,10)
-      panel_3D_plane.SetSizer(sizer_3D_plane)
-      #
-      sizer_3D_plane.Add(wx.StaticText(panel_3D_plane,label='  diameter (mm)'),(0,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.diameter_plane = wx.TextCtrl(panel_3D_plane,-1,'0.25')
-      sizer_3D_plane.Add(self.diameter_plane,(0,1),flag=(wx.ALIGN_LEFT))
-      self.number_plane = wx.TextCtrl(panel_3D_plane,-1,'1')
-      sizer_3D_plane.Add(self.number_plane,(0,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_plane.Add(wx.StaticText(panel_3D_plane,label='offsets (-1 to fill)'),(0,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_plane.Add(wx.StaticText(panel_3D_plane,label='overlap (0-1)'),(1,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.overlap_plane = wx.TextCtrl(panel_3D_plane,-1,'0.5')
-      sizer_3D_plane.Add(self.overlap_plane,(1,1),flag=(wx.ALIGN_LEFT))
-      self.error_plane = wx.TextCtrl(panel_3D_plane,-1,'1.1')
-      sizer_3D_plane.Add(self.error_plane,(1,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_plane.Add(wx.StaticText(panel_3D_plane,label='error (pixels)'),(1,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_plane.Add(wx.StaticText(panel_3D_plane,label='intensity (0-1) '),(2,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.intensity_plane = wx.TextCtrl(panel_3D_plane,-1,'0.5')
-      sizer_3D_plane.Add(self.intensity_plane,(2,1),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      self.z_plane = wx.TextCtrl(panel_3D_plane,-1,'0')
-      sizer_3D_plane.Add(self.z_plane,(2,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_plane.Add(wx.StaticText(panel_3D_plane,label='z (mm)'),(2,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      panel_3D_plane.Hide()
-      self.type_panels.append(panel_3D_plane)
-      #
-      # 3D rough panel
-      #
-      panel_3D_rough = wx.Panel(self)
-      sizer_3D_rough = wx.GridBagSizer(10,10)
-      panel_3D_rough.SetSizer(sizer_3D_rough)
-      #
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='diameter (mm)'),(0,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.diameter_rough = wx.TextCtrl(panel_3D_rough,-1,'0.25')
-      sizer_3D_rough.Add(self.diameter_rough,(0,1),flag=(wx.ALIGN_LEFT))
-      self.number_rough = wx.TextCtrl(panel_3D_rough,-1,'-1')
-      sizer_3D_rough.Add(self.number_rough,(0,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='offsets (-1 to fill)'),(0,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='overlap (0-1)'),(1,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.overlap_rough = wx.TextCtrl(panel_3D_rough,-1,'0.5')
-      sizer_3D_rough.Add(self.overlap_rough,(1,1),flag=(wx.ALIGN_LEFT))
-      self.error_rough = wx.TextCtrl(panel_3D_rough,-1,'1.1')
-      sizer_3D_rough.Add(self.error_rough,(1,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='error (pixels)'),(1,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='top intensity (0-1)'),(2,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.itop_rough = wx.TextCtrl(panel_3D_rough,-1,'1')
-      sizer_3D_rough.Add(self.itop_rough,(2,1),flag=(wx.ALIGN_LEFT))
-      self.ztop_rough = wx.TextCtrl(panel_3D_rough,-1,'0')
-      sizer_3D_rough.Add(self.ztop_rough,(2,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='top z (mm)'),(2,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='bot intensity (0-1)'),(3,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.ibot_rough = wx.TextCtrl(panel_3D_rough,-1,'0')
-      sizer_3D_rough.Add(self.ibot_rough,(3,1),flag=(wx.ALIGN_LEFT))
-      self.zbot_rough = wx.TextCtrl(panel_3D_rough,-1,'')
-      sizer_3D_rough.Add(self.zbot_rough,(3,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='bot z (mm)'),(3,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_rough.Add(wx.StaticText(panel_3D_rough,label='cut depth (mm)'),(4,1),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      self.zstep_rough = wx.TextCtrl(panel_3D_rough,-1,'1')
-      sizer_3D_rough.Add(self.zstep_rough,(4,2),flag=(wx.ALIGN_RIGHT))
-      #
-      panel_3D_rough.Hide()
-      self.type_panels.append(panel_3D_rough)
-      #
-      # 3D finish panel
-      #
-      panel_3D_finish = wx.Panel(self)
-      sizer_3D_finish = wx.GridBagSizer(10,10)
-      panel_3D_finish.SetSizer(sizer_3D_finish)
-      #
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='tool diameter (mm)'),(0,1),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.diameter_finish = wx.TextCtrl(panel_3D_finish,-1,'0.25')
-      sizer_3D_finish.Add(self.diameter_finish,(0,2),flag=(wx.ALIGN_LEFT))
-      #
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='overlap (0-1)'),(1,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.overlap_finish = wx.TextCtrl(panel_3D_finish,-1,'0.5')
-      sizer_3D_finish.Add(self.overlap_finish,(1,1),flag=(wx.ALIGN_LEFT))
-      self.error_finish = wx.TextCtrl(panel_3D_finish,-1,'1.1')
-      sizer_3D_finish.Add(self.error_finish,(1,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='error (pixels)'),(1,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='top intensity (0-1)'),(2,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.itop_finish = wx.TextCtrl(panel_3D_finish,-1,'1')
-      sizer_3D_finish.Add(self.itop_finish,(2,1),flag=(wx.ALIGN_LEFT))
-      self.ztop_finish = wx.TextCtrl(panel_3D_finish,-1,'0')
-      sizer_3D_finish.Add(self.ztop_finish,(2,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='top z (mm)'),(2,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='bot intensity (0-1)'),(3,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.ibot_finish = wx.TextCtrl(panel_3D_finish,-1,'0')
-      sizer_3D_finish.Add(self.ibot_finish,(3,1),flag=(wx.ALIGN_LEFT))
-      self.zbot_finish = wx.TextCtrl(panel_3D_finish,-1,'')
-      sizer_3D_finish.Add(self.zbot_finish,(3,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='bot z (mm)'),(3,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='clearance length (mm)'),(4,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.clearance_length_finish = wx.TextCtrl(panel_3D_finish,-1,'0')
-      sizer_3D_finish.Add(self.clearance_length_finish,(4,1),flag=(wx.ALIGN_LEFT))
-      self.clearance_diameter_finish = wx.TextCtrl(panel_3D_finish,-1,'0')
-      sizer_3D_finish.Add(self.clearance_diameter_finish,(4,2),flag=(wx.ALIGN_RIGHT))
-      sizer_3D_finish.Add(wx.StaticText(panel_3D_finish,label='clearance diameter (mm)'),(4,3),flag=(wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL))
-      #
-      panel_3D_finish_4 = wx.Panel(panel_3D_finish)
-      sizer_3D_finish_4 = wx.GridBagSizer(10,10)
-      panel_3D_finish_4.SetSizer(sizer_3D_finish_4)
-      sizer_3D_finish_4.Add(wx.StaticText(panel_3D_finish_4,label='direction:'),(0,0),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.xz_finish = wx.CheckBox(panel_3D_finish_4,-1,'xz',(10,10))
-      self.xz_finish.SetValue(True)
-      sizer_3D_finish_4.Add(self.xz_finish,(0,1),flag=wx.ALIGN_CENTER_HORIZONTAL)
-      self.yz_finish = wx.CheckBox(panel_3D_finish_4,-1,'yz',(10,10))
-      self.yz_finish.SetValue(True)
-      sizer_3D_finish_4.Add(self.yz_finish,(0,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
-      sizer_3D_finish_4.Add(wx.StaticText(panel_3D_finish_4,label='type:'),(0,3),flag=(wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL))
-      self.flat_end_finish = wx.RadioButton(panel_3D_finish_4,-1,'flat end',(10,10),style=wx.RB_GROUP)
-      sizer_3D_finish_4.Add(self.flat_end_finish,(0,4),flag=wx.ALIGN_CENTER_HORIZONTAL)
-      self.ball_end_finish = wx.RadioButton(panel_3D_finish_4,-1,'ball end',(10,10))
-      #self.ball_end_finish.Enable(False)
-      sizer_3D_finish_4.Add(self.ball_end_finish,(0,5),flag=wx.ALIGN_CENTER_HORIZONTAL)
-      sizer_3D_finish.Add(panel_3D_finish_4,(5,0),span=(1,4),flag=(wx.ALIGN_CENTER_HORIZONTAL))
-      #
-      panel_3D_finish.Hide()
-      self.type_panels.append(panel_3D_finish)
+      set3 = wx.Button(self,label='3D settings')
+      set3.Bind(wx.EVT_BUTTON,path3)
+      self.sizer.Add(set3,(9,0),span=(1,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
       #
       # fit
       #
-      self.Fit()
-      #
-   #
-   # path type handler
-   #
-   def path_type_handler(self,event):
-      self.parent.path_type = self.path_types[event.GetSelection()]
-      self.parent.update_panels()
-   #
-   # parent call to update panel
-   #
-   def update_panel(self):
-      index = self.path_types.index(self.parent.path_type)
-      self.path_type.SetSelection(index)
-      self.sizer.Detach(self.type_panel)
-      self.type_panel.Hide()
-      self.sizer.Add(self.type_panels[index],(3,0),flag=(wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_TOP))
-      self.type_panels[index].Show()
-      self.type_panel = self.type_panels[index]
-      #
-      # check for 3D info in PNG
-      #
-      if (self.parent.png_file != ''):
-         temp_name = self.parent.tmp+'png_info'
-         command = 'png_size '+'\"'+self.parent.png_file+'\"'+' > '+'\"'+temp_name+'\"'
-         os.system(command)
-         output_file = open(temp_name,'r')
-         info = output_file.read()
-         command = 'rm '+'\"'+temp_name+'\"'
-         os.system(command)
-         start = 3+string.find(info,'dz:')
-         if (start > 2):
-            #
-            # 3D info found, update
-            #
-            end = string.find(info,'mm',start)-1
-            self.parent.zmin = -float(info[start:end])/self.parent.units
-            self.parent.zmax = 0
-            if (self.parent.path_type == "3D rough"):
-               self.ztop_rough.SetValue(str(self.parent.units*self.parent.zmax))
-               self.zbot_rough.SetValue(str(self.parent.units*self.parent.zmin))
-            elif (self.parent.path_type == "3D finish"):
-               self.ztop_finish.SetValue(str(self.parent.units*self.parent.zmax))
-               self.zbot_finish.SetValue(str(self.parent.units*self.parent.zmin))
-      self.Layout()
-      self.Fit()
-   #
-   # parent call to update size
-   #
-   def update_size(self,sizex,sizey):
-      self.Layout()
       self.Fit()

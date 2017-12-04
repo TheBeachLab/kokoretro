@@ -32,7 +32,7 @@ help:
 	@echo "    make dist          Copies files to Web directory"
 	@echo "    make install       Copies files to /usr/local/bin"
 	@echo "    make clean         Removes compiled executables and scripts from bin"
-	@echo "    make wxpython22.9   Downloads, compiles, and installs wxpython2 2.9.4.1"
+	@echo "    make wxpython2.9   Downloads, compiles, and installs wxpython 2.9.4.1"
 	@echo "                       (Linux only)"
 
 fab:
@@ -44,6 +44,33 @@ fab:
 	 make -j4;                                         \
 	 make install | sed "s@$(PWD)/src/../@@g"
 
+wxpython2.9:
+	
+	@echo "Using apt-get to install necessary packages"; \
+	 yes|sudo apt-get install dpkg-dev build-essential swig python2.7-dev libwebkitgtk-dev libjpeg-dev libtiff-dev checkinstall ubuntu-restricted-extras freeglut3 freeglut3-dev libgtk2.0-dev  libsdl1.2-dev libgstreamer-plugins-base0.10-dev 
+
+	@cd ~ ; \
+	 echo "Downloading wxPython 2.9.4.0"; \
+	 wget "http://downloads.sourceforge.net/project/wxpython/wxPython/2.9.4.0/wxPython-src-2.9.4.0.tar.bz2" ; \
+	 echo "Downloading wxPython 2.9.4.1 patch"; \
+	 wget "http://downloads.sourceforge.net/project/wxpython/wxPython/2.9.4.0/wxPython-src-2.9.4.1.patch"  ; \
+	 echo "Unzipping wxPython 2.9.4.0"; \
+	 tar xvjf wxPython-src-2.9.4.0.tar.bz2; \
+	 echo "Applying wxPython 2.9.4.1 patch"; \
+	 patch -p 0 -d wxPython-src-2.9.4.0/ < wxPython-src-2.9.4.1.patch; \
+	 cd wxPython-src-2.9.4.0/wxPython; \
+	 echo "Compiling wxPython 2.9.4.1"; \
+	 sudo python build-wxpython.py --build_dir=../bld --install; \
+	 echo "Updating library cache"; \
+	 sudo ldconfig; \
+	 echo "Cleaning up"; \
+	 cd ~;\
+	 rm wxPython-src-2.9.4.0.tar.bz2; \
+	 rm wxPython-src-2.9.4.1.patch; \
+	 sudo rm -rf wxPython-src-2.9.4.0
+
+	@python -c "import wx; print 'wx version =', wx.version()"
+	
 doc: commands.html
 commands.html: fab
 	@# Dump all of the command names
@@ -68,19 +95,19 @@ zip: commands.html
 	rm -rf src/apps/dist
 	rm -rf src/apps/build
 	
-#	@echo "Copying revision number to kokopelli About panel"
-#	@if which hg &>/dev/null && hg summary &> /dev/null; \
-#	 then \
-#	    sed "s/CHANGESET = .*/CHANGESET = '`hg id --num`:`hg id --id`'/g" \
-#	    src/guis/koko/__init__.py > tmp; \
-#	    mv tmp src/guis/koko/__init__.py; \
-#	 fi
+	@echo "Copying revision number to kokopelli About panel"
+	@if which hg &>/dev/null && hg summary &> /dev/null; \
+	 then \
+	    sed "s/CHANGESET = .*/CHANGESET = '`hg id --num`:`hg id --id`'/g" \
+	    src/guis/koko/__init__.py > tmp; \
+	    mv tmp src/guis/koko/__init__.py; \
+	 fi
 	
 	zip -r fab_src.zip commands.html Makefile src
 	
-#	@sed "s/CHANGESET = .*/CHANGESET = None/g" \
-#	    src/guis/koko/__init__.py > tmp; \
-#	    mv tmp src/guis/koko/__init__.py; \
+	@sed "s/CHANGESET = .*/CHANGESET = None/g" \
+	    src/guis/koko/__init__.py > tmp; \
+	    mv tmp src/guis/koko/__init__.py; \
 
 dist: zip
 	cp fab_src.zip ../../Web/fab_src.zip
@@ -104,6 +131,8 @@ install: fab
 	    echo "   Pre-existing fab_send has not been overwritten, and"; \
 	    echo "   the new version of fab_send has been named fab_send.new"; \
 	fi
+	@echo "Copying shared libraries to /usr/local/lib"
+	@cp -r lib/* /usr/local/lib/
 
 clean:
 	@echo "Deleting build directory"

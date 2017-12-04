@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import datetime
 import os
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             print 'Newer version is available:\n%s' % date_info
         else:
             print 'No newer version available:\n%s' % date_info
-
+                  
     # Download & install if the web version is newer than this version
     elif sys.argv[1] == 'install':
         web_date = get_date()
@@ -76,13 +76,9 @@ if __name__ == '__main__':
         print "Unzipping source"
         unzip()
         print "Installing"
-        if subprocess.call(['make','fab']) != 0:
-            print 'Build failed.  Please make sure your dependancies are up-to-date.'
-            shutil.rmtree(src_dir)
-            sys.exit(1)
         subprocess.call(['make','install'])
         shutil.rmtree(src_dir)
-
+        
     # Invalid option
     else:
         print 'Invalid option "%s"' % ' '.join(sys.argv[1:])

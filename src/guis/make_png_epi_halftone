@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # make_png_epi_halftone
 #    .png to .epi halftone GUI wrapper

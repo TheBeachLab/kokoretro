@@ -105,14 +105,6 @@ class png_panel(wx.Panel):
             cad_file.close()
             self.text.SetValue(cad_string)
       #
-      # invert 
-      #
-      def invert_dialog(event):
-         command = 'png_scale '+'\"'+self.parent.png_file+'\" \"'+self.parent.png_file+'\" 1 0'
-         print command
-         os.system(command)
-         load_file(0)
-      #
       # resize
       #
       def resize_dialog(event):
@@ -130,6 +122,7 @@ class png_panel(wx.Panel):
          command = 'png_size '+'\"'+self.parent.png_file+'\" '+width+' '+height
          print command
          os.system(command)
+
          load_file(0)
          resize.Hide()
       def resize_width_handler(event):
@@ -190,7 +183,8 @@ class png_panel(wx.Panel):
       #
       # image
       #
-      self.bitmap = wx.StaticBitmap(self)
+      image = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, (self.parent.size,self.parent.size))
+      self.bitmap = wx.StaticBitmap(self,-1,image)
       self.sizer.Add(self.bitmap,(1,0),flag=(wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL))
       self.bitmap.Hide()
       def mouse_move(event):
@@ -203,29 +197,19 @@ class png_panel(wx.Panel):
       #
       # controls
       #
-      control_panel = wx.Panel(self)
-      control_sizer = wx.GridBagSizer(10,10)
-      control_panel.SetSizer(control_sizer)
-      #
-      button = wx.Button(control_panel,label='load .png')
+      button = wx.Button(self,label='load .png')
       button.Bind(wx.EVT_BUTTON,file_dialog)
-      control_sizer.Add(button,(0,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      self.sizer.Add(button,(2,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
       #
-      button = wx.Button(control_panel,label='resize .png')
+      button = wx.Button(self,label='resize .png')
       button.Bind(wx.EVT_BUTTON,resize_dialog)
-      control_sizer.Add(button,(0,1),flag=wx.ALIGN_CENTER_HORIZONTAL)
-      #
-      button = wx.Button(control_panel,label='invert .png')
-      button.Bind(wx.EVT_BUTTON,invert_dialog)
-      control_sizer.Add(button,(0,2),flag=wx.ALIGN_CENTER_HORIZONTAL)
-      #
-      self.sizer.Add(control_panel,(2,0),flag=(wx.ALIGN_CENTER_HORIZONTAL))
+      self.sizer.Add(button,(3,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
       #
       self.position= wx.StaticText(self,label="")
-      self.sizer.Add(self.position,(3,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      self.sizer.Add(self.position,(4,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
       #
       self.info= wx.StaticText(self,label="")
-      self.sizer.Add(self.info,(4,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
+      self.sizer.Add(self.info,(5,0),flag=wx.ALIGN_CENTER_HORIZONTAL)
       #
       # file
       #
@@ -233,10 +217,4 @@ class png_panel(wx.Panel):
       #
       # fit
       #
-      self.Fit()
-   #
-   # parent call to update size
-   #
-   def update_size(self,sizex,sizey):
-      self.Layout()
       self.Fit()

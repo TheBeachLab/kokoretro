@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # png_l.py
 #    converted a PNG image to a grayscale integer lattice

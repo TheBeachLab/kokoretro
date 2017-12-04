@@ -32,6 +32,8 @@ class path_ord_panel(wx.Panel):
          command = 'path_ord '+'\"'+self.parent.path_file+'\"'+' '+'\"'+self.parent.ord_file+'\"'+' '+lead+' '+quality
          print command
          os.system(command)
+         self.button.SetMaxSize((self.parent.xsize,self.parent.ysize))
+         self.button.SetMinSize((self.parent.xsize,self.parent.ysize))
          self.button.Show()
          self.parent.Layout()
          self.parent.Fit()

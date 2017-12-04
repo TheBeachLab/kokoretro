@@ -36,6 +36,8 @@ class path_uni_panel(wx.Panel):
          command = 'path_uni '+'\"'+self.parent.path_file+'\"'+' '+'\"'+self.parent.uni_file+'\"'+' '+power+' '+speed+' '+xmin+' '+ymin+' '+' '+rate+' '+maxpower
          print command
          os.system(command)
+         self.button.SetMaxSize((self.parent.xsize,self.parent.ysize))
+         self.button.SetMinSize((self.parent.xsize,self.parent.ysize))
          self.button.Show()
          self.parent.Layout()
          self.parent.Fit()

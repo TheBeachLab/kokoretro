@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # make_svg_uni
 #    .svg to .uni GUI wrapper

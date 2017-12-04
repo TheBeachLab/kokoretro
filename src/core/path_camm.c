@@ -12,7 +12,7 @@
 
 #include "fab.h"
 
-void fab_write_camm(struct fab_vars *v, char *output_file_name, float force, float velocity, float ox, float oy, char loc) {
+void fab_write_camm(struct fab_vars *v, char *output_file_name, float force, float velocity) {
    //
    // write path to Roland vinylcutter file
    //
@@ -22,22 +22,8 @@ void fab_write_camm(struct fab_vars *v, char *output_file_name, float force, flo
    output_file = fopen(output_file_name,"w");
    fprintf(output_file,"PA;PA;!ST1;!FS%f;VS%f;\n",force,velocity);
    scale = 40.0*v->dx/(v->nx-1.0); // 40/mm
-   if (loc == 'l') {
-      xoffset = 40.0*(ox);
-      yoffset = 40.0*(oy);
-      }
-   else if (loc == 'r') {
-      xoffset = 40.0*(ox - v->dx);
-      yoffset = 40.0*(oy);
-      }
-   else if (loc == 'L') {
-      xoffset = 40.0*(ox);
-      yoffset = 40.0*(oy - v->dy);
-      }
-   else if (loc == 'R') {
-      xoffset = 40.0*(ox - v->dx);
-      yoffset = 40.0*(oy - v->dy);
-      }
+   xoffset = 40.0*v->xmin;
+   yoffset = 40.0*v->ymin;
    v->path->segment = v->path->last;
    while (1) {
       //
@@ -46,10 +32,8 @@ void fab_write_camm(struct fab_vars *v, char *output_file_name, float force, flo
       v->path->segment->point = v->path->segment->first;
       x = xoffset + scale * v->path->segment->point->first->value;
       y = yoffset + scale * (v->ny - v->path->segment->point->first->next->value);
-      fprintf(output_file,"PU%d,%d;\n",x,y); // move up to start point
-      fprintf(output_file,"PU%d,%d;\n",x,y); // hack: repeat in case comm dropped
-      fprintf(output_file,"PD%d,%d;\n",x,y); // move down
-      fprintf(output_file,"PD%d,%d;\n",x,y); // hack: repeat in case comm dropped
+      fprintf(output_file,"PU%d,%d;",x,y); // move up to start point
+      fprintf(output_file,"PD%d,%d;",x,y); // move down
       nsegs += 1;
       while (1) {
          //
@@ -60,17 +44,15 @@ void fab_write_camm(struct fab_vars *v, char *output_file_name, float force, flo
          v->path->segment->point = v->path->segment->point->next;
          x = xoffset + scale * v->path->segment->point->first->value;
          y = yoffset + scale * (v->ny - v->path->segment->point->first->next->value);
-         fprintf(output_file,"PD%d,%d;\n",x,y); // move down
-         fprintf(output_file,"PD%d,%d;\n",x,y); // hack: repeat in case comm dropped
+         fprintf(output_file,"PD%d,%d;",x,y);
          npts += 1;
          }
-      //fprintf(output_file,"\n",x,y);
+      fprintf(output_file,"\n",x,y);
       if (v->path->segment->previous == 0)
          break;
       v->path->segment = v->path->segment->previous;
       }
-   fprintf(output_file,"PU0,0;\n"); // pen up to origin
-   fprintf(output_file,"PU0,0;\n"); // hack: repeat in case comm dropped
+   fprintf(output_file,"PU0,0;\n");
    fclose(output_file);
    printf("wrote %s\n",output_file_name);
    printf("   segments: %d, points: %d\n",nsegs,npts);
@@ -82,47 +64,46 @@ main(int argc, char **argv) {
    //
    struct fab_vars v;
    init_vars(&v);
-   float ox,oy,force,velocity;
-   char loc;
+   float xmin,ymin,force,velocity;
    //
    // command line args
    //
-   if (!((argc == 3) || (argc == 4) || (argc == 5) || (argc == 7) || (argc == 8))) {
-      printf("command line: path_camm in.path out.camm [force [velocity [x y [location]]]]\n");
+   if (!((argc == 3) || (argc == 4) || (argc == 5) || (argc == 7))) {
+      printf("command line: path_camm in.path out.camm [force [velocity [xmin ymin]]]\n");
       printf("   in.path = input path file\n");
       printf("   out.camm = output Roland vinylcutter file\n");
       printf("   force = cutting force (optional, grams, default 45)\n");
       printf("   velocity = cutting speed (optional, cm/s, default 2)\n");
-      printf("   x = origin x (optional, mm, default 0)\n");
-      printf("   y = origin y (optional, mm, default 0)\n");
-      printf("   location = origin location (optional, bottom left:l, bottom right:r, top left:L, top right:R, default l)\n");
+      printf("   xmin = left position (optional, mm, default path value)\n");
+      printf("   ymin = bottom position (optional, mm, default path value)\n");
       exit(-1);
       }
-   force = 45;
-   velocity = 2;
-   ox = 0;
-   oy = 0;
-   loc = 'l';
-   if (argc >= 4) {
+   if (argc == 3) {
+      force = 45;
+      velocity = 2;
+      }
+   else if (argc == 4) {
       sscanf(argv[3],"%f",&force);
+      velocity = 2;
       }
-   if (argc >= 5) {
+   else if (argc == 5) {
+      sscanf(argv[3],"%f",&force);
       sscanf(argv[4],"%f",&velocity);
-      }
-   if (argc >= 7) {
-      sscanf(argv[5],"%f",&ox);
-      sscanf(argv[6],"%f",&oy);
-      }
-   if (argc >= 8) {
-      sscanf(argv[7],"%c",&loc);
       }
    //
    // read path
    //
    fab_read_path(&v,argv[1]);
    //
+   // origin
+   //
+   if (argc == 7) {
+      sscanf(argv[5],"%lf",&v.xmin);
+      sscanf(argv[6],"%lf",&v.ymin);
+      }
+   //
    // write .epi
    //
-   fab_write_camm(&v,argv[2],force,velocity,ox,oy,loc);
+   fab_write_camm(&v,argv[2],force,velocity);
    }
 

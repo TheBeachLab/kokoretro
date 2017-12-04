@@ -18,7 +18,7 @@ void fab_write_dxf(struct fab_vars *v, char *output_file_name) {
    // write path to DXF file
    //
    int x,y,z;
-   float x0,y0,z0,x1,y1,z1;
+   float x0,y0,x1,y1;
 	FILE *output_file;
    int nsegs=0, npts=0;
    float scale,units;
@@ -28,19 +28,13 @@ void fab_write_dxf(struct fab_vars *v, char *output_file_name) {
    fprintf(output_file,"999\nDXF written by fab modules path_dxf\n");
    fprintf(output_file,"0\nSECTION\n");
    fprintf(output_file,"2\nHEADER\n");
-   fprintf(output_file,"9\n$ACADVER\n1\nAC1009\n");
    fprintf(output_file,"9\n$EXTMIN\n");
    fprintf(output_file,"10\n%f\n",units*v->xmin);
    fprintf(output_file,"20\n%f\n",units*v->ymin);
-   if (v->path->dof == 3)
-      fprintf(output_file,"30\n%f\n",units*(v->zmin));
    fprintf(output_file,"9\n$EXTMAX\n");
    fprintf(output_file,"10\n%f\n",units*(v->xmin+v->dx));
    fprintf(output_file,"20\n%f\n",units*(v->ymin+v->dy));
-   if (v->path->dof == 3)
-      fprintf(output_file,"30\n%f\n",units*(v->zmin+v->dz));
    fprintf(output_file,"0\nENDSEC\n");
-   /*
    fprintf(output_file,"0\nSECTION\n");
    fprintf(output_file,"2\nTABLES\n");
    fprintf(output_file,"0\nTABLE\n");
@@ -58,7 +52,6 @@ void fab_write_dxf(struct fab_vars *v, char *output_file_name) {
    fprintf(output_file,"0\nSECTION\n");
    fprintf(output_file,"2\nBLOCKS\n");
    fprintf(output_file,"0\nENDSEC\n");
-   */
    fprintf(output_file,"0\nSECTION\n");
    fprintf(output_file,"2\nENTITIES\n");
    v->path->segment = v->path->first;
@@ -69,12 +62,11 @@ void fab_write_dxf(struct fab_vars *v, char *output_file_name) {
       v->path->segment->point = v->path->segment->first;
       x = v->path->segment->point->first->value;
       y = v->ny - v->path->segment->point->first->next->value;
-      if (v->path->dof == 3)
+      if (v->path->dof == 3) {
          z = v->path->segment->point->first->next->next->value;
+         }
       x0 = units*(v->xmin+scale*x);
       y0 = units*(v->ymin+scale*y);
-      if (v->path->dof == 3)
-         z0 = units*(v->zmin+scale*z);
       nsegs += 1;
       while (1) {
          //
@@ -85,25 +77,18 @@ void fab_write_dxf(struct fab_vars *v, char *output_file_name) {
          v->path->segment->point = v->path->segment->point->next;
          x = v->path->segment->point->first->value;
          y = v->ny - v->path->segment->point->first->next->value;
-         if (v->path->dof == 3)
-            z = v->path->segment->point->first->next->next->value;
          x1 = units*(v->xmin+scale*x);
          y1 = units*(v->ymin+scale*y);
-         if (v->path->dof == 3)
-            z1 = units*(v->zmin+scale*z);
          fprintf(output_file,"0\nLINE\n");
          fprintf(output_file,"10\n%f\n",x0);
          fprintf(output_file,"20\n%f\n",y0);
-         if (v->path->dof == 3)
-            fprintf(output_file,"30\n%f\n",z0);
          fprintf(output_file,"11\n%f\n",x1);
          fprintf(output_file,"21\n%f\n",y1);
-         if (v->path->dof == 3)
-            fprintf(output_file,"31\n%f\n",z1);
          x0 = x1;
          y0 = y1;
-         if (v->path->dof == 3)
-            z0 = z1;
+         if (v->path->dof == 3) {
+            z = v->path->segment->point->first->next->next->value;
+            }
          npts += 1;
          }
       if (v->path->segment->next == 0)

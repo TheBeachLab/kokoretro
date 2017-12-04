@@ -11,7 +11,7 @@
 #
 # imports
 #
-import wx,os,string
+import wx,os
 #
 # panel class
 #
@@ -38,12 +38,9 @@ class stl_png_panel(wx.Panel):
          if (self.parent.stl_file == ''):
             print "panel_stl_png: oops -- must read .stl first"
             return
-         #
-         # construct command
-         #
          self.parent.png_file = self.parent.tmp+self.parent.rootname+'.png'
          units = self.units.GetValue()
-         self.parent.units = float(units)
+         parent.units = float(units)
          resolution = self.resolution.GetValue()
          if (self.x.GetValue()):
             axis = 'x'
@@ -51,7 +48,6 @@ class stl_png_panel(wx.Panel):
             axis = 'X'
          elif (self.y.GetValue()):
             axis = 'y'
-            self.parent.zmin = 1234
          elif (self.Y.GetValue()):
             axis = 'Y'
          elif (self.z.GetValue()):
@@ -59,35 +55,10 @@ class stl_png_panel(wx.Panel):
          elif (self.Z.GetValue()):
             axis = 'Z'
          command = 'stl_png '+'\"'+self.parent.stl_file+'\"'+' '+'\"'+self.parent.png_file+'\"'+' '+units+' '+resolution+' '+axis
-         #
-         # generate PNG
-         #
          print command
          os.system(command)
-         #
-         # get image info
-         #
          info = png_info(self.parent.png_file)
          self.info.SetLabel(info)
-         start = 3+string.find(info,'dx:')
-         end = string.find(info,'mm',start)-1
-         self.parent.xmin = 0
-         self.parent.xmax = float(info[start:end])/self.parent.units
-         start = 3+string.find(info,'dy:')
-         end = string.find(info,'mm',start)-1
-         self.parent.ymin = 0
-         self.parent.ymax = float(info[start:end])/self.parent.units
-         start = 3+string.find(info,'dz:')
-         end = string.find(info,'mm',start)-1
-         self.parent.zmin = -float(info[start:end])/self.parent.units
-         self.parent.zmax = 0
-         #
-         # update panels
-         #
-         parent.update_panels()
-         #
-         # show image
-         #
          png_image = wx.Image(self.parent.png_file)
          (nx,ny) = png_image.GetSize()
          ratio = float(ny)/float(nx)
@@ -125,28 +96,28 @@ class stl_png_panel(wx.Panel):
       self.bitmap.Hide()
       def mouse_move(event):
          if (self.x.GetValue()):
-            y = self.parent.units*(self.parent.ymin + (self.parent.ymax-self.parent.ymin)*event.GetX()/float(self.parent.xsize))
-            z = self.parent.units*(self.parent.zmin + (self.parent.zmax-self.parent.zmin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize))
+            y = self.parent.ymin + (self.parent.ymax-self.parent.ymin)*event.GetX()/float(self.parent.xsize)
+            z = self.parent.zmin + (self.parent.zmax-self.parent.zmin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize)
             self.position.SetLabel("y: %.3f mm  z: %.3f mm"%(y,z))
          elif (self.X.GetValue()):
-            y = self.parent.units*(self.parent.ymin + (self.parent.ymax-self.parent.ymin)*event.GetX()/float(self.parent.xsize))
-            z = self.parent.units*(self.parent.zmin + (self.parent.zmax-self.parent.zmin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize))
+            y = self.parent.ymin + (self.parent.ymax-self.parent.ymin)*event.GetX()/float(self.parent.xsize)
+            z = self.parent.zmin + (self.parent.zmax-self.parent.zmin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize)
             self.position.SetLabel("y: %.3f mm  z: %.3f mm"%(y,z))
          elif (self.y.GetValue()):
-            z = self.parent.units*(self.parent.zmin + (self.parent.zmax-self.parent.zmin)*event.GetX()/float(self.parent.xsize))
-            x = self.parent.units*(self.parent.xmin + (self.parent.xmax-self.parent.xmin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize))
+            z = self.parent.zmin + (self.parent.zmax-self.parent.zmin)*event.GetX()/float(self.parent.xsize)
+            x = self.parent.xmin + (self.parent.xmax-self.parent.xmin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize)
             self.position.SetLabel("x: %.3f mm  z: %.3f mm"%(x,z))
          elif (self.Y.GetValue()):
-            z = self.parent.units*(self.parent.zmin + (self.parent.zmax-self.parent.zmin)*(self.parent.xsize-event.GetX())/float(self.parent.xsize))
-            x = self.parent.units*(self.parent.ymin + (self.parent.ymax-self.parent.ymin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize))
+            z = self.parent.zmin + (self.parent.zmax-self.parent.zmin)*(self.parent.xsize-event.GetX())/float(self.parent.xsize)
+            x = self.parent.ymin + (self.parent.ymax-self.parent.ymin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize)
             self.position.SetLabel("x: %.3f mm  z: %.3f mm"%(x,z))
          elif (self.z.GetValue()):
-            x = self.parent.units*(self.parent.xmin + (self.parent.xmax-self.parent.xmin)*event.GetX()/float(self.parent.xsize))
-            y = self.parent.units*(self.parent.ymin + (self.parent.ymax-self.parent.ymin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize))
+            x = self.parent.xmin + (self.parent.xmax-self.parent.xmin)*event.GetX()/float(self.parent.xsize)
+            y = self.parent.ymin + (self.parent.ymax-self.parent.ymin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize)
             self.position.SetLabel("x: %.3f mm  y: %.3f mm"%(x,y))
          elif (self.Z.GetValue()):
-            x = self.parent.units*(self.parent.xmin + (self.parent.xmax-self.parent.xmin)*(self.parent.xsize-event.GetX())/float(self.parent.xsize))
-            y = self.parent.units*(self.parent.ymin + (self.parent.ymax-self.parent.ymin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize))
+            x = self.parent.xmin + (self.parent.xmax-self.parent.xmin)*(self.parent.xsize-event.GetX())/float(self.parent.xsize)
+            y = self.parent.ymin + (self.parent.ymax-self.parent.ymin)*(self.parent.ysize-event.GetY())/float(self.parent.ysize)
             self.position.SetLabel("x: %.3f mm  y: %.3f mm"%(x,y))
          self.Layout()
          self.Fit()
@@ -202,9 +173,3 @@ class stl_png_panel(wx.Panel):
       # fit
       #
       self.Fit()
-   #
-   # parent call to update panel for workflow
-   #
-   def update_panel(self):
-      self.units.SetValue(str(self.parent.units))
-

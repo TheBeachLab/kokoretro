@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # make_math_camm
 #    .math to .camm GUI wrapper

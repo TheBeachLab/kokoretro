@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # fabserver.py
-# command line syntax: python2 fabserver.py port
+# command line syntax: python fabserver.py port
 #
 # Neil Gershenfeld
 # CBA MIT 12/6/12
@@ -185,7 +185,7 @@ def render():
 # get command line arguments
 #
 if (len(sys.argv) != 2):
-   print "command line syntax: python2 fabserver.py port"
+   print "command line syntax: python fabserver.py port"
    sys.exit()
 server_port = sys.argv[1]
 #

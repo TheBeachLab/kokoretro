@@ -2,15 +2,12 @@
 // stl_png.c
 //    convert STL to PNG
 //
-// Neil Gershenfeld 10/4/13
-// (c) Massachusetts Institute of Technology 2013
+// Neil Gershenfeld
+// CBA MIT 10/3/10
 //
-// This work may be reproduced, modified, distributed,
-// performed, and displayed for any purpose, but must
-// acknowledge the fab modules project. Copyright is
-// retained and must be preserved. The work is provided
-// as is; no warranty is provided, and users accept all 
-// liability.
+// (c) Massachusetts Institute of Technology 2010
+// Permission granted for experimental and personal use;
+// license for commercial sale available from MIT.
 //
 
 #include "fab.h"
@@ -63,12 +60,6 @@ main(int argc, char **argv) {
    // draw mesh into array
    //
    fab_shade_mesh(&v,units,resolution,axis);
-   //
-   // move origin to corner
-   //
-   v.xmin = 0;
-   v.ymin = 0;
-   v.zmin = 0;
    //
    //  write PNG
    //
